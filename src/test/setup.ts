@@ -1,5 +1,4 @@
 import '@testing-library/jest-dom/vitest';
-import { vi } from 'vitest';
 
 const storage = new Map<string, string>();
 
