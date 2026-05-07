@@ -1,4 +1,4 @@
-import { type FormEvent, useState } from 'react';
+import { type FormEvent, useState, useCallback } from 'react';
 import { sendChatMessage } from '../api/chatClient';
 import type { ChatMessage, FeedbackEvent, SleepProfile } from '../domain/types';
 import { clearAllLocalData, getChatHistory, getFeedbackEvents, saveChatHistory, saveFeedbackEvents } from '../storage/localStore';
@@ -21,7 +21,7 @@ export function ChatPage({ profile, onReset }: ChatPageProps) {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState('');
 
-  async function submit(event: FormEvent) {
+  const submit = useCallback(async (event: FormEvent) => {
     event.preventDefault();
     if (!input.trim() || pending) return;
 
@@ -51,21 +51,21 @@ export function ChatPage({ profile, onReset }: ChatPageProps) {
     } finally {
       setPending(false);
     }
-  }
+  }, [input, pending, messages, profile]);
 
-  function recordFeedback(value: 'useful' | 'not_useful') {
+  const recordFeedback = useCallback((value: 'useful' | 'not_useful') => {
     const lastAssistant = [...messages].reverse().find((message) => message.role === 'assistant');
     if (!lastAssistant) return;
 
     const next = [...feedback, { messageId: lastAssistant.id, value, createdAt: new Date().toISOString() }];
     setFeedback(next);
     saveFeedbackEvents(next);
-  }
+  }, [messages, feedback]);
 
-  function reset() {
+  const reset = useCallback(() => {
     clearAllLocalData();
     onReset();
-  }
+  }, [onReset]);
 
   return (
     <main className="page chat-page">

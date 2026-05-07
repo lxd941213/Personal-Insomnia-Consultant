@@ -16,10 +16,12 @@ const profile: SleepProfile = {
 };
 
 describe('sendChatMessage', () => {
-  afterEach(() => vi.restoreAllMocks());
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
 
   it('posts profile and message to the chat API', async () => {
-    vi.stubGlobal('fetch', vi.fn(async () => ({
+    const mockFetch = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({
         riskLevel: 'normal',
@@ -30,11 +32,22 @@ describe('sendChatMessage', () => {
         seekCareNotice: null,
         disclaimer: 'This is for health management reference only and is not medical diagnosis.',
       }),
-    })));
+    });
+    vi.stubGlobal('fetch', mockFetch);
 
     const response = await sendChatMessage({ profile, message: 'Help', history: [] });
 
     expect(fetch).toHaveBeenCalledWith('/api/chat', expect.objectContaining({ method: 'POST' }));
     expect(response.riskLevel).toBe('normal');
+  });
+
+  it('throws on non-OK response', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: false,
+      status: 500,
+    }));
+
+    await expect(sendChatMessage({ profile, message: 'Help', history: [] }))
+      .rejects.toThrow('Chat API failed with 500');
   });
 });
