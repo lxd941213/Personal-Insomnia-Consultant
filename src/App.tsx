@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import './styles.css';
+import { ChatPage } from './components/ChatPage';
 import { EntryPage } from './components/EntryPage';
 import { ProfileWizard } from './components/ProfileWizard';
 import type { SleepProfile } from './domain/types';
@@ -17,6 +18,11 @@ export default function App() {
     setView('chat');
   }
 
+  function resetProfile() {
+    setProfile(null);
+    setView('profile');
+  }
+
   if (view === 'entry') {
     return <EntryPage onStart={() => setView('profile')} />;
   }
@@ -25,12 +31,5 @@ export default function App() {
     return <ProfileWizard onComplete={completeProfile} />;
   }
 
-  return (
-    <main className="page">
-      <section className="panel">
-        <h1>Profile saved</h1>
-        <p>The chat interface is implemented in Task 6. Profile saved for {profile.ageRange}.</p>
-      </section>
-    </main>
-  );
+  return <ChatPage profile={profile} onReset={resetProfile} />;
 }

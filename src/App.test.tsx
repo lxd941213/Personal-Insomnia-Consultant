@@ -35,6 +35,6 @@ describe('App', () => {
     await user.type(screen.getByLabelText('Daytime impact'), 'Tired');
     await user.click(screen.getByRole('button', { name: 'Start consultation' }));
 
-    expect(screen.getByRole('heading', { name: 'Profile saved' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Sleep consultation' })).toBeInTheDocument();
   });
 });
