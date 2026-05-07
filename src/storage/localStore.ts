@@ -10,11 +10,15 @@ const memoryStore = new Map<string, string>();
 
 function readJson<T>(key: string, fallback: T): T {
   try {
-    const value = window.localStorage.getItem(key) ?? memoryStore.get(key);
-    return value ? (JSON.parse(value) as T) : fallback;
+    const lsValue = window.localStorage.getItem(key);
+    if (lsValue !== null) {
+      return JSON.parse(lsValue) as T;
+    }
+    const memValue = memoryStore.get(key);
+    return memValue ? JSON.parse(memValue) as T : fallback;
   } catch {
-    const value = memoryStore.get(key);
-    return value ? (JSON.parse(value) as T) : fallback;
+    const memValue = memoryStore.get(key);
+    return memValue ? JSON.parse(memValue) as T : fallback;
   }
 }
 

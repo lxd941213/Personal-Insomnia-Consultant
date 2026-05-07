@@ -55,4 +55,22 @@ describe('localStore', () => {
 
     Object.defineProperty(window.localStorage, 'setItem', { value: original, configurable: true });
   });
+
+  it('reads from memory when localStorage read fails', () => {
+    saveSleepProfile(profile);
+
+    Object.defineProperty(window.localStorage, 'getItem', {
+      value: () => {
+        throw new Error('storage unavailable');
+      },
+      configurable: true,
+    });
+
+    expect(getSleepProfile()).toEqual(profile);
+
+    Object.defineProperty(window.localStorage, 'getItem', {
+      value: window.localStorage.getItem.bind(window.localStorage),
+      configurable: true,
+    });
+  });
 });
