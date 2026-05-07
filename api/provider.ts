@@ -11,6 +11,15 @@ export async function callAiProvider(prompt: string): Promise<AiProviderResult> 
     throw new Error('AI_API_KEY is required');
   }
 
+  try {
+    const url = new URL(baseUrl);
+    if (url.protocol !== 'https:') {
+      throw new Error('AI_BASE_URL must use HTTPS');
+    }
+  } catch {
+    throw new Error('Invalid AI_BASE_URL');
+  }
+
   const response = await fetch(baseUrl, {
     method: 'POST',
     headers: {

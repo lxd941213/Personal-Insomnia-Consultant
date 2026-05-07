@@ -6,6 +6,8 @@ import { buildSleepAdvisorPrompt } from './prompt';
 import { callAiProvider } from './provider';
 import { sendJson } from './response';
 
+const MAX_MESSAGE_LENGTH = 4096;
+
 interface ChatRequestBody {
   profile?: SleepProfile;
   message?: string;
@@ -20,6 +22,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const body = req.body as ChatRequestBody;
   if (!body.profile || typeof body.message !== 'string' || body.message.trim().length === 0) {
     return sendJson(res, 400, { error: 'Profile and message are required' });
+  }
+
+  if (body.message.length > MAX_MESSAGE_LENGTH) {
+    return sendJson(res, 400, { error: 'Message too long' });
   }
 
   if (detectHighRiskSignal(body.message) || body.profile.safetySignals.length > 0) {

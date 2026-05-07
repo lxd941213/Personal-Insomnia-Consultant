@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import handler from './chat';
 import type { SleepProfile } from '../src/domain/types';
+import { callAiProvider } from './provider';
 
 vi.mock('./provider', () => ({
   callAiProvider: vi.fn(async () => ({
@@ -56,6 +57,15 @@ describe('chat api', () => {
   it('returns safe high-risk response without provider call', async () => {
     const res = mockRes();
     await handler({ method: 'POST', body: { profile, message: 'I want to hurt myself', history: [] } } as never, res as never);
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toMatchObject({ riskLevel: 'high_risk' });
+  });
+
+  it('returns safe fallback for malformed JSON response', async () => {
+    vi.mocked(callAiProvider).mockResolvedValueOnce({ content: 'not valid json' });
+    const res = mockRes();
+    await handler({ method: 'POST', body: { profile, message: 'Test', history: [] } } as never, res as never);
 
     expect(res.statusCode).toBe(200);
     expect(res.body).toMatchObject({ riskLevel: 'high_risk' });
