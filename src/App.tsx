@@ -1,21 +1,25 @@
 import { useState } from 'react';
 import './styles.css';
 import { ChatPage } from './components/ChatPage';
+import { DashboardPage } from './components/DashboardPage';
 import { EntryPage } from './components/EntryPage';
 import { ProfileWizard } from './components/ProfileWizard';
-import type { SleepProfile } from './domain/types';
-import { getSleepProfile, saveSleepProfile } from './storage/localStore';
+import type { AssessmentResult, SleepProfile } from './domain/types';
+import { getAssessmentResult, getSleepProfile, saveSleepProfile } from './storage/localStore';
 
-type View = 'entry' | 'profile' | 'chat';
+type View = 'entry' | 'profile' | 'dashboard' | 'assessment' | 'knowledge' | 'chat';
 
 export default function App() {
   const [profile, setProfile] = useState<SleepProfile | null>(() => getSleepProfile());
-  const [view, setView] = useState<View>(() => (getSleepProfile() ? 'chat' : 'entry'));
+  const [assessmentResult, setAssessmentResult] = useState<AssessmentResult | null>(() =>
+    getAssessmentResult(),
+  );
+  const [view, setView] = useState<View>(() => (getSleepProfile() ? 'dashboard' : 'entry'));
 
   function completeProfile(nextProfile: SleepProfile) {
     saveSleepProfile(nextProfile);
     setProfile(nextProfile);
-    setView('chat');
+    setView('dashboard');
   }
 
   function resetProfile() {
@@ -31,5 +35,20 @@ export default function App() {
     return <ProfileWizard onComplete={completeProfile} />;
   }
 
+  if (view === 'dashboard') {
+    return (
+      <DashboardPage
+        profile={profile}
+        assessmentResult={assessmentResult}
+        onStartAssessment={() => setView('assessment')}
+        onOpenKnowledge={() => setView('knowledge')}
+        onOpenChat={() => setView('chat')}
+        onReset={resetProfile}
+      />
+    );
+  }
+
+  // Temporary routing for assessment/knowledge/chat until later tasks
+  // assessment and knowledge will show ChatPage as placeholder
   return <ChatPage profile={profile} onReset={resetProfile} />;
 }
