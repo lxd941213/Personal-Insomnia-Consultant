@@ -226,4 +226,26 @@ describe('buildScenePrompt', () => {
     const prompt = buildScenePrompt('stress_anxiety');
     expect(prompt).toContain('失眠');
   });
+
+  it('returns bedtime ritual context for the bedtime ritual feature', () => {
+    const prompt = buildScenePrompt('bedtime_ritual');
+    expect(prompt).toContain('睡前 30 分钟计划');
+  });
+
+  it('returns audio guidance context for the sound meditation feature', () => {
+    const prompt = buildScenePrompt('sound_meditation');
+    expect(prompt).toContain('白噪音');
+    expect(prompt).toContain('冥想音频');
+  });
+
+  it('returns medical triage context for the online consultation feature', () => {
+    const prompt = buildScenePrompt('medical_triage');
+    expect(prompt).toContain('在线问诊导流');
+    expect(prompt).toContain('不替代医疗诊断');
+  });
+
+  it('returns diet sleep context for the diet link feature', () => {
+    const prompt = buildScenePrompt('diet_sleep_link');
+    expect(prompt).toContain('饮食习惯与睡眠');
+  });
 });
