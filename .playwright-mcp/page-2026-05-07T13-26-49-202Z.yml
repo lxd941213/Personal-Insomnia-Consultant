@@ -1,0 +1,10 @@
+- main [ref=e3]:
+  - generic [ref=e4]:
+    - generic [ref=e5]: ☽
+    - paragraph [ref=e6]: 睡眠健康 AI 顾问
+    - heading "几分钟内 获得个性化睡眠指导" [level=1] [ref=e7]:
+      - text: 几分钟内
+      - text: 获得个性化睡眠指导
+    - paragraph [ref=e8]: 创建简单睡眠档案，然后咨询入睡困难、夜间习惯、压力与睡眠质量等问题
+    - button "创建睡眠档案" [ref=e9] [cursor=pointer]
+  - generic [ref=e10]: 本工具仅提供健康管理参考，不是医疗诊断，不能替代专业诊疗

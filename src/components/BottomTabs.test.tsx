@@ -1,12 +1,11 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { BottomTabs } from './BottomTabs';
 
 describe('BottomTabs', () => {
   it('renders bottom tabs in Chinese and switches tabs', async () => {
-    const user = userEvent.setup();
-    render(<BottomTabs active="today" onChange={(tab) => {}} />);
+    render(<BottomTabs active="today" onChange={() => {}} />);
     expect(screen.getByRole('button', { name: '今日' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '日记' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '趋势' })).toBeInTheDocument();
@@ -25,7 +24,7 @@ describe('BottomTabs', () => {
   });
 
   it('applies active class to the active tab', () => {
-    render(<BottomTabs active="today" onChange={(tab) => {}} />);
+    render(<BottomTabs active="today" onChange={() => {}} />);
 
     const todayButton = screen.getByRole('button', { name: '今日' });
     expect(todayButton).toHaveClass(/active/);

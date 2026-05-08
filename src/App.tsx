@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import './styles.css';
 import { AssessmentPage } from './components/AssessmentPage';
-import { BottomTabs } from './components/BottomTabs';
+import { BottomTabs, type MainTab } from './components/BottomTabs';
 import { ChatPage } from './components/ChatPage';
 import { DiaryPage } from './components/DiaryPage';
 import { EntryPage } from './components/EntryPage';
@@ -15,7 +15,6 @@ import { TrendsPage } from './components/TrendsPage';
 import type { AssessmentResult, SleepProfile, SleepScenario } from './domain/types';
 import { clearAllLocalData, getAssessmentResult, getSleepProfile, saveSleepProfile } from './storage/localStore';
 
-type MainTab = 'today' | 'diary' | 'trends' | 'plans' | 'my';
 type ChildView = 'profile' | 'assessment' | 'knowledge' | 'chat' | 'relaxation' | null;
 
 export default function App() {
@@ -73,7 +72,7 @@ export default function App() {
   if (childView === 'assessment') {
     return (
       <AssessmentPage
-        profile={profile}
+        profile={profile!}
         onComplete={(result) => {
           setAssessmentResult(result);
         }}
@@ -85,7 +84,7 @@ export default function App() {
   if (childView === 'knowledge') {
     return (
       <KnowledgePage
-        profile={profile}
+        profile={profile!}
         assessmentResult={assessmentResult}
         initialScenario={selectedScenario ?? undefined}
         onBack={() => setChildView(null)}
@@ -96,7 +95,7 @@ export default function App() {
   if (childView === 'chat') {
     return (
       <ChatPage
-        profile={profile}
+        profile={profile!}
         chatScope={selectedScenario ?? 'general'}
         assessmentResult={assessmentResult}
         initialScenario={selectedScenario}
@@ -121,7 +120,7 @@ export default function App() {
       case 'today':
         return (
           <TodayPage
-            profile={profile}
+            profile={profile!}
             assessmentResult={assessmentResult}
             onOpenChat={openChat}
             onOpenAssessment={() => setChildView('assessment')}
@@ -141,14 +140,14 @@ export default function App() {
       case 'plans':
         return (
           <PlansPage
-            profile={profile}
+            profile={profile!}
             assessmentResult={assessmentResult}
           />
         );
       case 'my':
         return (
           <MyPage
-            profile={profile}
+            profile={profile!}
             onReset={resetProfile}
           />
         );

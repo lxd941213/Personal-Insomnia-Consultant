@@ -104,7 +104,7 @@ export function recommendSleepPlans({ profile, assessmentResult, diarySummary }:
     ));
   }
 
-  if (profile.stressLevel.includes('高') || profile.mainConcern === 'stress_anxiety') {
+  if (profile.stressLevel.includes('高')) {
     recommendations.push(makeRecommendation(
       'breathing-before-bed',
       70,

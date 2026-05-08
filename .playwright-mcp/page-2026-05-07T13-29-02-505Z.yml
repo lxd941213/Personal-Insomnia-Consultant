@@ -1,0 +1,90 @@
+- main [ref=e11]:
+  - generic [ref=e12]:
+    - heading "建立您的睡眠档案" [level=1] [ref=e13]
+    - paragraph [ref=e14]: 回答以下问题，获取个性化建议
+    - generic [ref=e15]:
+      - text: 年龄段
+      - combobox "年龄段" [ref=e16]:
+        - option "请选择" [selected]
+        - option "18岁以下"
+        - option "18-24岁"
+        - option "25-34岁"
+        - option "35-44岁"
+        - option "45-59岁"
+        - option "60岁以上"
+    - generic [ref=e17]:
+      - text: 通常就寝时间
+      - textbox "通常就寝时间" [ref=e18]
+    - generic [ref=e19]:
+      - text: 通常起床时间
+      - textbox "通常起床时间" [ref=e20]
+    - generic [ref=e21]:
+      - text: 主要睡眠问题
+      - combobox "主要睡眠问题" [ref=e22]:
+        - option "难以入睡" [selected]
+        - option "早醒"
+        - option "频繁醒来"
+        - option "多梦"
+        - option "白天嗜睡"
+        - option "夜间习惯问题"
+        - option "其他"
+    - generic [ref=e23]:
+      - text: 问题持续时间
+      - combobox "问题持续时间" [ref=e24]:
+        - option "请选择" [selected]
+        - option "不到1周"
+        - option "1-4周"
+        - option "1-3个月"
+        - option "3个月以上"
+    - generic [ref=e25]:
+      - text: 压力水平
+      - combobox "压力水平" [ref=e26]:
+        - option "请选择" [selected]
+        - option "较低"
+        - option "中等"
+        - option "较高"
+        - option "很高"
+    - group "睡眠相关习惯" [ref=e27]:
+      - generic [ref=e28]: 睡眠相关习惯
+      - generic [ref=e29]:
+        - button "睡前玩手机" [active] [ref=e30] [cursor=pointer]:
+          - img [ref=e31]
+          - text: 睡前玩手机
+        - button "午后摄入咖啡因" [ref=e33] [cursor=pointer]:
+          - img [ref=e34]
+          - text: 午后摄入咖啡因
+        - button "夜间饮酒" [ref=e37] [cursor=pointer]:
+          - img [ref=e38]
+          - text: 夜间饮酒
+        - button "睡前运动" [ref=e41] [cursor=pointer]:
+          - img [ref=e42]
+          - text: 睡前运动
+    - group "安全信号" [ref=e47]:
+      - generic [ref=e48]: 安全信号
+      - generic [ref=e49]:
+        - button "严重症状" [ref=e50] [cursor=pointer]:
+          - img [ref=e51]
+          - text: 严重症状
+        - button "疑似睡眠呼吸暂停" [ref=e53] [cursor=pointer]:
+          - img [ref=e54]
+          - text: 疑似睡眠呼吸暂停
+        - button "自伤想法" [ref=e59] [cursor=pointer]:
+          - img [ref=e60]
+          - text: 自伤想法
+        - button "药物依赖" [ref=e62] [cursor=pointer]:
+          - img [ref=e63]
+          - text: 药物依赖
+        - button "重大基础疾病" [ref=e66] [cursor=pointer]:
+          - img [ref=e67]
+          - text: 重大基础疾病
+        - button "孕期或产后" [ref=e69] [cursor=pointer]:
+          - img [ref=e70]
+          - text: 孕期或产后
+    - generic [ref=e72]:
+      - text: 白天影响
+      - textbox "白天影响" [ref=e73]
+    - generic [ref=e74]:
+      - text: 补充说明（选填）
+      - textbox "补充说明（选填）" [ref=e75]
+    - button "开始咨询" [ref=e76] [cursor=pointer]
+    - paragraph [ref=e77]: 您的档案仅存储在本设备的浏览器中
