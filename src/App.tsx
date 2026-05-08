@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import './styles.css';
+import { AssessmentPage } from './components/AssessmentPage';
 import { ChatPage } from './components/ChatPage';
 import { DashboardPage } from './components/DashboardPage';
 import { EntryPage } from './components/EntryPage';
@@ -44,6 +45,17 @@ export default function App() {
         onOpenKnowledge={() => setView('knowledge')}
         onOpenChat={() => setView('chat')}
         onReset={resetProfile}
+      />
+    );
+  }
+
+  if (view === 'assessment') {
+    return (
+      <AssessmentPage
+        onComplete={(result) => {
+          setAssessmentResult(result);
+          setView('dashboard');
+        }}
       />
     );
   }
