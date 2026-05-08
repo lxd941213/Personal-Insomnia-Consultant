@@ -28,7 +28,7 @@ describe('App', () => {
     expect(screen.getByRole('heading', { name: '建立您的睡眠档案' })).toBeInTheDocument();
   });
 
-  it('shows dashboard after completing profile', async () => {
+  it('shows today page after completing profile', async () => {
     const user = userEvent.setup();
     render(<App />);
 
@@ -41,7 +41,7 @@ describe('App', () => {
     await user.type(screen.getByLabelText('白天影响'), '疲劳');
     await user.click(screen.getByRole('button', { name: '开始咨询' }));
 
-    expect(screen.getByRole('heading', { name: '睡眠健康助手' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: '今日睡眠' })).toBeInTheDocument();
   });
 
   it('opens scene chat without exposing the default scene prompt', async () => {
@@ -64,7 +64,7 @@ describe('App', () => {
     expect(input).not.toHaveValue(expect.stringContaining('你是一位睡眠健康专家'));
   });
 
-  it('clears all local sleep data when resetting from dashboard', async () => {
+  it('clears all local sleep data when resetting from my page', async () => {
     const user = userEvent.setup();
     window.localStorage.setItem(
       'sleepProfile',
@@ -99,6 +99,9 @@ describe('App', () => {
     }));
 
     render(<App />);
+
+    // Navigate to My page
+    await user.click(screen.getByRole('button', { name: '我的' }));
     await user.click(screen.getByRole('button', { name: '重置档案' }));
 
     expect(window.localStorage.getItem('sleepProfile')).toBeNull();
@@ -106,6 +109,6 @@ describe('App', () => {
     expect(window.localStorage.getItem('feedbackEvents')).toBeNull();
     expect(window.localStorage.getItem('assessmentResult')).toBeNull();
     expect(window.localStorage.getItem('knowledgeCache')).toBeNull();
-    expect(screen.getByRole('heading', { name: '建立您的睡眠档案' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: '几分钟内获得个性化睡眠指导' })).toBeInTheDocument();
   });
 });

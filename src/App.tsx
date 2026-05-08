@@ -1,28 +1,38 @@
 import { useState } from 'react';
 import './styles.css';
 import { AssessmentPage } from './components/AssessmentPage';
+import { BottomTabs } from './components/BottomTabs';
 import { ChatPage } from './components/ChatPage';
-import { DashboardPage } from './components/DashboardPage';
+import { DiaryPage } from './components/DiaryPage';
 import { EntryPage } from './components/EntryPage';
 import { KnowledgePage } from './components/KnowledgePage';
+import { MyPage } from './components/MyPage';
+import { PlansPage } from './components/PlansPage';
 import { ProfileWizard } from './components/ProfileWizard';
+import { RelaxationPage } from './components/RelaxationPage';
+import { TodayPage } from './components/TodayPage';
+import { TrendsPage } from './components/TrendsPage';
 import type { AssessmentResult, SleepProfile, SleepScenario } from './domain/types';
 import { clearAllLocalData, getAssessmentResult, getSleepProfile, saveSleepProfile } from './storage/localStore';
 
-type View = 'entry' | 'profile' | 'dashboard' | 'assessment' | 'knowledge' | 'chat';
+type MainTab = 'today' | 'diary' | 'trends' | 'plans' | 'my';
+type ChildView = 'profile' | 'assessment' | 'knowledge' | 'chat' | 'relaxation' | null;
 
 export default function App() {
   const [profile, setProfile] = useState<SleepProfile | null>(() => getSleepProfile());
   const [assessmentResult, setAssessmentResult] = useState<AssessmentResult | null>(() =>
     getAssessmentResult(),
   );
-  const [view, setView] = useState<View>(() => (getSleepProfile() ? 'dashboard' : 'entry'));
+  const [activeTab, setActiveTab] = useState<MainTab>('today');
+  const [childView, setChildView] = useState<ChildView>(null);
   const [selectedScenario, setSelectedScenario] = useState<SleepScenario | null>(null);
+  const [selectedRelaxationTool, setSelectedRelaxationTool] = useState('breathing-478');
 
   function completeProfile(nextProfile: SleepProfile) {
     saveSleepProfile(nextProfile);
     setProfile(nextProfile);
-    setView('dashboard');
+    setActiveTab('today');
+    setChildView(null);
   }
 
   function resetProfile() {
@@ -30,72 +40,125 @@ export default function App() {
     setProfile(null);
     setAssessmentResult(null);
     setSelectedScenario(null);
-    setView('profile');
+    setActiveTab('today');
+    setChildView(null);
   }
 
   function openChat(scenario?: SleepScenario) {
     setSelectedScenario(scenario ?? null);
-    setView('chat');
+    setChildView('chat');
   }
 
   function openKnowledge(scenario?: SleepScenario) {
     setSelectedScenario(scenario ?? null);
-    setView('knowledge');
+    setChildView('knowledge');
   }
 
-  if (view === 'entry') {
-    return <EntryPage onStart={() => setView('profile')} />;
+  function openRelaxation(toolId: string) {
+    setSelectedRelaxationTool(toolId);
+    setChildView('relaxation');
   }
 
-  if (view === 'profile' || !profile) {
+  // Show ProfileWizard when explicitly navigating to profile
+  if (childView === 'profile') {
     return <ProfileWizard onComplete={completeProfile} />;
   }
 
-  if (view === 'dashboard') {
-    return (
-      <DashboardPage
-        profile={profile}
-        assessmentResult={assessmentResult}
-        onStartAssessment={() => setView('assessment')}
-        onOpenKnowledge={openKnowledge}
-        onOpenChat={openChat}
-        onReset={resetProfile}
-      />
-    );
+  // Show EntryPage for users without a profile
+  if (!profile) {
+    return <EntryPage onStart={() => setChildView('profile')} />;
   }
 
-  if (view === 'assessment') {
+  // Render child views first when active
+  if (childView === 'assessment') {
     return (
       <AssessmentPage
         profile={profile}
         onComplete={(result) => {
           setAssessmentResult(result);
         }}
-        onBack={() => setView('dashboard')}
+        onBack={() => setChildView(null)}
       />
     );
   }
 
-  if (view === 'knowledge') {
+  if (childView === 'knowledge') {
     return (
       <KnowledgePage
         profile={profile}
         assessmentResult={assessmentResult}
         initialScenario={selectedScenario ?? undefined}
-        onBack={() => setView('dashboard')}
+        onBack={() => setChildView(null)}
       />
     );
   }
 
-  // view === 'chat'
+  if (childView === 'chat') {
+    return (
+      <ChatPage
+        profile={profile}
+        chatScope={selectedScenario ?? 'general'}
+        assessmentResult={assessmentResult}
+        initialScenario={selectedScenario}
+        onBack={() => setChildView(null)}
+        onReset={resetProfile}
+      />
+    );
+  }
+
+  if (childView === 'relaxation') {
+    return (
+      <RelaxationPage
+        toolId={selectedRelaxationTool}
+        onBack={() => setChildView(null)}
+      />
+    );
+  }
+
+  // Render tab shell
+  function renderTabPage() {
+    switch (activeTab) {
+      case 'today':
+        return (
+          <TodayPage
+            profile={profile}
+            assessmentResult={assessmentResult}
+            onOpenChat={openChat}
+            onOpenAssessment={() => setChildView('assessment')}
+            onOpenKnowledge={openKnowledge}
+            onOpenRelaxation={openRelaxation}
+            onOpenDiary={() => setActiveTab('diary')}
+          />
+        );
+      case 'diary':
+        return <DiaryPage />;
+      case 'trends':
+        return (
+          <TrendsPage
+            onOpenDiary={() => setActiveTab('diary')}
+          />
+        );
+      case 'plans':
+        return (
+          <PlansPage
+            profile={profile}
+            assessmentResult={assessmentResult}
+          />
+        );
+      case 'my':
+        return (
+          <MyPage
+            profile={profile}
+            onReset={resetProfile}
+          />
+        );
+    }
+  }
+
   return (
-    <ChatPage
-      profile={profile}
-      chatScope={selectedScenario ?? 'general'}
-      assessmentResult={assessmentResult}
-      initialScenario={selectedScenario}
-      onBack={() => setView('dashboard')}
-      onReset={resetProfile}
-    />
+    <>
+      {renderTabPage()}
+      <BottomTabs active={activeTab} onChange={setActiveTab} />
+    </>
   );
 }
