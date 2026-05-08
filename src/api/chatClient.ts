@@ -1,10 +1,11 @@
 import { normalizeAiResponse } from '../domain/aiResponse';
-import type { AiResponse, ChatMessage, SleepProfile } from '../domain/types';
+import type { AssessmentResult, AiResponse, ChatMessage, SleepProfile } from '../domain/types';
 
 interface SendChatMessageInput {
   profile: SleepProfile;
   message: string;
   history: ChatMessage[];
+  assessmentResult?: AssessmentResult | null;
 }
 
 export async function sendChatMessage(input: SendChatMessageInput): Promise<AiResponse> {

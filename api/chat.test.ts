@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import handler from './chat';
-import type { SleepProfile } from '../src/domain/types';
+import type { AssessmentResult, SleepProfile } from '../src/domain/types';
 import { callAiProvider } from './provider';
 
 vi.mock('./provider', () => ({
@@ -69,5 +69,122 @@ describe('chat api', () => {
 
     expect(res.statusCode).toBe(200);
     expect(res.body).toMatchObject({ riskLevel: 'high_risk' });
+  });
+
+  it('accepts JSON wrapped in a markdown code fence from the provider', async () => {
+    vi.mocked(callAiProvider).mockResolvedValueOnce({
+      content: `\`\`\`json
+{
+  "riskLevel": "normal",
+  "summary": "先把起床时间固定住，再逐步提前入睡。",
+  "possibleFactors": ["睡眠窗口偏短"],
+  "suggestions": [{"title": "固定起床", "detail": "未来一周每天在同一时间起床。"}],
+  "nextQuestions": ["白天是否会补觉？"],
+  "seekCareNotice": null,
+  "disclaimer": "本内容仅提供健康管理参考，不作为医疗诊断。"
+}
+\`\`\``,
+    });
+    const res = mockRes();
+    await handler({ method: 'POST', body: { profile, message: '每天只能睡四个小时左右', history: [] } } as never, res as never);
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toMatchObject({
+      riskLevel: 'normal',
+      summary: '先把起床时间固定住，再逐步提前入睡。',
+    });
+  });
+
+  it('accepts JSON after provider reasoning text', async () => {
+    vi.mocked(callAiProvider).mockResolvedValueOnce({
+      content: `<think>需要先判断风险等级。</think>
+
+{
+  "riskLevel": "normal",
+  "summary": "先记录一周睡眠日志，确认早醒出现的时间和频率。",
+  "possibleFactors": ["压力水平较高"],
+  "suggestions": [{"title": "记录早醒", "detail": "醒来后记录时间、情绪和是否再次入睡。"}],
+  "nextQuestions": ["早醒后通常会不会看手机？"],
+  "seekCareNotice": null,
+  "disclaimer": "本内容仅提供健康管理参考，不作为医疗诊断。"
+}`,
+    });
+    const res = mockRes();
+    await handler({ method: 'POST', body: { profile, message: '我总是早醒', history: [] } } as never, res as never);
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toMatchObject({
+      riskLevel: 'normal',
+      summary: '先记录一周睡眠日志，确认早醒出现的时间和频率。',
+    });
+  });
+
+  it('skips invalid JSON-like snippets before the provider JSON object', async () => {
+    vi.mocked(callAiProvider).mockResolvedValueOnce({
+      content: `<think>{"riskLevel":"...", "summary":"...", ...}</think>
+
+{
+  "riskLevel": "normal",
+  "summary": "建议先稳定作息并观察连续几天的总睡眠时长。",
+  "possibleFactors": ["早醒后焦虑"],
+  "suggestions": [{"title": "离床放松", "detail": "醒后超过20分钟仍无法入睡时，起身做低刺激放松。"}],
+  "nextQuestions": ["醒来后是否会明显焦虑？"],
+  "seekCareNotice": null,
+  "disclaimer": "本内容仅提供健康管理参考，不作为医疗诊断。"
+}`,
+    });
+    const res = mockRes();
+    await handler({ method: 'POST', body: { profile, message: '睡得很短', history: [] } } as never, res as never);
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toMatchObject({
+      riskLevel: 'normal',
+      summary: '建议先稳定作息并观察连续几天的总睡眠时长。',
+    });
+  });
+
+  it('includes assessment context in prompt when provided', async () => {
+    const assessmentResult: AssessmentResult = {
+      completedAt: '2024-01-15T10:00:00Z',
+      isi: {
+        answers: [3, 2, 2, 1, 2, 3, 2],
+        score: 15,
+        level: 'moderate',
+        summary: '中度失眠',
+      },
+      psqiLite: {
+        answers: [2, 1, 2, 1, 2],
+        score: 8,
+        level: 'poor',
+        summary: '睡眠质量较差',
+      },
+      riskFlags: ['入睡困难', '白天功能影响'],
+    };
+
+    let capturedPrompt = '';
+    vi.mocked(callAiProvider).mockImplementation(async (prompt: string) => {
+      capturedPrompt = prompt;
+      return {
+        content: JSON.stringify({
+          riskLevel: 'normal',
+          summary: 'Test response',
+          possibleFactors: [],
+          suggestions: [],
+          nextQuestions: [],
+          seekCareNotice: null,
+          disclaimer: 'Test',
+        }),
+      };
+    });
+
+    const res = mockRes();
+    await handler({
+      method: 'POST',
+      body: { profile, message: '我睡不着怎么办', history: [], assessmentResult },
+    } as never, res as never);
+
+    expect(res.statusCode).toBe(200);
+    expect(capturedPrompt).toContain('最近一次睡眠自测');
+    expect(capturedPrompt).toContain('ISI：15 分');
   });
 });
