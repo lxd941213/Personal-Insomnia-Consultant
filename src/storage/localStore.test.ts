@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { clearAllLocalData, getChatHistory, getFeedbackEvents, getSleepProfile, saveChatHistory, saveFeedbackEvents, saveSleepProfile } from './localStore';
+import { clearAllLocalData, getAssessmentResult, getChatHistory, getFeedbackEvents, getKnowledgeCache, getSleepProfile, saveAssessmentResult, saveChatHistory, saveFeedbackEvents, saveKnowledgeCache, saveSleepProfile } from './localStore';
 import type { SleepProfile } from '../domain/types';
+import type { AssessmentResult, KnowledgeResponse } from '../domain/types';
 
 const profile: SleepProfile = {
   ageRange: '25-34',
@@ -13,6 +14,35 @@ const profile: SleepProfile = {
   daytimeImpact: 'Tired at work',
   safetySignals: [],
   optionalContext: 'Mind keeps racing.',
+};
+
+const assessmentResult: AssessmentResult = {
+  completedAt: '2026-05-08T00:00:00.000Z',
+  isi: {
+    answers: [3, 2, 1, 2, 3, 1, 2],
+    score: 14,
+    level: 'moderate',
+    summary: 'Moderate insomnia symptoms',
+  },
+  psqiLite: {
+    answers: [2, 1, 2, 1, 1, 2, 1],
+    score: 10,
+    level: 'poor',
+    summary: 'Poor sleep quality',
+  },
+  riskFlags: ['sleep_latency', 'sleep_efficiency'],
+};
+
+const knowledgeCache: KnowledgeResponse = {
+  cards: [
+    {
+      scenario: 'hard_to_fall_asleep',
+      title: 'Sleep Hygiene Tips',
+      content: 'Maintain a consistent sleep schedule.',
+      tags: ['sleep', 'hygiene'],
+    },
+  ],
+  disclaimer: 'For informational purposes only.',
 };
 
 describe('localStore', () => {
@@ -72,5 +102,23 @@ describe('localStore', () => {
       value: window.localStorage.getItem.bind(window.localStorage),
       configurable: true,
     });
+  });
+
+  it('saves and reads assessment result', () => {
+    saveAssessmentResult(assessmentResult);
+    expect(getAssessmentResult()).toEqual(assessmentResult);
+  });
+
+  it('saves and reads knowledge cache', () => {
+    saveKnowledgeCache(knowledgeCache);
+    expect(getKnowledgeCache()).toEqual(knowledgeCache);
+  });
+
+  it('clears assessment result and knowledge cache with all local data', () => {
+    saveAssessmentResult(assessmentResult);
+    saveKnowledgeCache(knowledgeCache);
+    clearAllLocalData();
+    expect(getAssessmentResult()).toBeNull();
+    expect(getKnowledgeCache()).toBeNull();
   });
 });

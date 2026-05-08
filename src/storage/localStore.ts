@@ -1,9 +1,11 @@
-import type { ChatMessage, FeedbackEvent, SleepProfile } from '../domain/types';
+import type { AssessmentResult, ChatMessage, FeedbackEvent, KnowledgeResponse, SleepProfile } from '../domain/types';
 
 const keys = {
   profile: 'sleepProfile',
   chatHistory: 'chatHistory',
   feedbackEvents: 'feedbackEvents',
+  assessmentResult: 'assessmentResult',
+  knowledgeCache: 'knowledgeCache',
 } as const;
 
 const memoryStore = new Map<string, string>();
@@ -65,8 +67,28 @@ export function saveFeedbackEvents(events: FeedbackEvent[]): void {
   writeJson(keys.feedbackEvents, events);
 }
 
+export type KnowledgeCache = KnowledgeResponse;
+
+export function getAssessmentResult(): AssessmentResult | null {
+  return readJson<AssessmentResult | null>(keys.assessmentResult, null);
+}
+
+export function saveAssessmentResult(result: AssessmentResult): void {
+  writeJson(keys.assessmentResult, result);
+}
+
+export function getKnowledgeCache(): KnowledgeResponse | null {
+  return readJson<KnowledgeResponse | null>(keys.knowledgeCache, null);
+}
+
+export function saveKnowledgeCache(cache: KnowledgeResponse): void {
+  writeJson(keys.knowledgeCache, cache);
+}
+
 export function clearAllLocalData(): void {
   removeKey(keys.profile);
   removeKey(keys.chatHistory);
   removeKey(keys.feedbackEvents);
+  removeKey(keys.assessmentResult);
+  removeKey(keys.knowledgeCache);
 }
