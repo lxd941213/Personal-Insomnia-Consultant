@@ -156,3 +156,18 @@ export interface RelaxationSession extends SyncRecord {
   durationSeconds: number;
   status: RelaxationSessionStatus;
 }
+
+export interface RelaxationStep {
+  label: string;
+  durationSeconds: number;
+}
+
+export interface RelaxationTool {
+  id: string;
+  title: string;
+  description: string;
+  estimatedMinutes: number;
+  steps: RelaxationStep[];
+  audioUrl: string | null;
+  audioState: 'unavailable';
+}
