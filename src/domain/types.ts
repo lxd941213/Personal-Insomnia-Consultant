@@ -171,3 +171,23 @@ export interface RelaxationTool {
   audioUrl: string | null;
   audioState: 'unavailable';
 }
+
+export type SleepPlanCategory = 'cbti' | 'schedule' | 'relaxation' | 'nutrition' | 'wellness' | 'safety';
+
+export interface SleepPlan {
+  id: string;
+  category: SleepPlanCategory;
+  title: string;
+  summary: string;
+  steps: string[];
+  tags: string[];
+  safetyNote: string | null;
+}
+
+export interface PlanRecommendation {
+  planId: string;
+  priority: number;
+  reasons: string[];
+  matchedSignals: string[];
+  safetyNote: string | null;
+}
