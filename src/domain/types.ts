@@ -57,7 +57,11 @@ export type SleepScenario =
   | 'late_night_habit'
   | 'stress_anxiety'
   | 'poor_sleep_quality'
-  | 'wellness_regulation';
+  | 'wellness_regulation'
+  | 'bedtime_ritual'
+  | 'sound_meditation'
+  | 'medical_triage'
+  | 'diet_sleep_link';
 
 // Assessment domain types
 export type IsiLevel = 'none' | 'mild' | 'moderate' | 'severe';

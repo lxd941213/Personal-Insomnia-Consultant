@@ -164,8 +164,8 @@ describe('buildAssessmentResult', () => {
 });
 
 describe('sleepScenarios', () => {
-  it('should have 5 scenarios', () => {
-    expect(sleepScenarios).toHaveLength(5);
+  it('should have 9 scenarios', () => {
+    expect(sleepScenarios).toHaveLength(9);
   });
 
   it('should have Chinese labels', () => {
@@ -181,6 +181,10 @@ describe('sleepScenarios', () => {
       '压力焦虑',
       '熬夜习惯',
       '养生调理',
+      '睡前仪式助手',
+      '白噪音 / 冥想音频',
+      '在线问诊导流',
+      '饮食 × 睡眠关联',
     ]);
   });
 
@@ -191,6 +195,10 @@ describe('sleepScenarios', () => {
     expect(ids).toContain('stress_anxiety');
     expect(ids).toContain('poor_sleep_quality');
     expect(ids).toContain('wellness_regulation');
+    expect(ids).toContain('bedtime_ritual');
+    expect(ids).toContain('sound_meditation');
+    expect(ids).toContain('medical_triage');
+    expect(ids).toContain('diet_sleep_link');
   });
 });
 
