@@ -96,3 +96,44 @@ export interface KnowledgeResponse {
   disclaimer: string;
   generatedAt: string;
 }
+
+// Shared diary types
+export interface SyncRecord {
+  id: string;
+  createdAt: string;
+  updatedAt: string;
+  version: number;
+}
+
+export interface BedtimeCheckin {
+  mood: string;
+  stressLevel: number;
+  factors: string[];
+  plannedActions: string[];
+  notes: string;
+}
+
+export interface WakeCheckin {
+  sleepStart: string;
+  wakeTime: string;
+  sleepLatencyMinutes: number;
+  awakenings: number;
+  sleepQuality: number;
+  dreamNote: string;
+  daytimeFeeling: string;
+  notes: string;
+}
+
+export interface SleepDiaryEntry extends SyncRecord {
+  date: string;
+  bedtimeCheckin: BedtimeCheckin | null;
+  wakeCheckin: WakeCheckin | null;
+}
+
+export interface DiarySummary {
+  entryCount: number;
+  averageSleepDurationMinutes: number | null;
+  averageSleepLatencyMinutes: number | null;
+  averageAwakenings: number | null;
+  averageSleepQuality: number | null;
+}
