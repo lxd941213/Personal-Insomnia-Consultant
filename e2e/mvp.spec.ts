@@ -79,4 +79,18 @@ test('user can create profile, complete assessment, generate knowledge cards, an
 
   await expect(page.getByText(/根据您的情况/)).toBeVisible();
   await expect(page.getByRole('button', { name: '有用' })).toBeVisible();
+
+  // Sleep enhancement: diary, trend, and plan
+  await page.getByRole('button', { name: '日记' }).click();
+  await expect(page.getByRole('heading', { name: '睡眠日记' })).toBeVisible();
+  await page.getByLabel('睡前情绪').fill('平静');
+  await page.getByRole('button', { name: '保存睡前记录' }).click();
+  await page.getByLabel('入睡时间').fill('23:40');
+  await page.getByLabel('起床时间').fill('07:10');
+  await page.getByLabel('入睡耗时').fill('35');
+  await page.getByRole('button', { name: '保存起床记录' }).click();
+  await page.getByRole('button', { name: '趋势' }).click();
+  await expect(page.getByText(/近 7 天/)).toBeVisible();
+  await page.getByRole('button', { name: '方案' }).click();
+  await expect(page.getByText('推荐方案')).toBeVisible();
 });

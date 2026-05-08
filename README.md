@@ -44,3 +44,15 @@ npm run e2e
 The MVP stores profile, chat history, and feedback only in the current browser. It does not implement accounts, databases, or server-side health profile storage.
 
 The AI response is for health management reference only and is not medical diagnosis.
+
+## Sleep Enhancement Data
+
+The enhanced diary, trend, reminder, relaxation, and plan recommendation features are local-first. Data is stored in this browser through localStorage with sync-ready IDs and timestamps, but this version does not include accounts, backend storage, browser notifications, or audio playback.
+
+Verification:
+
+```bash
+npm test
+npm run build
+npm run e2e
+```

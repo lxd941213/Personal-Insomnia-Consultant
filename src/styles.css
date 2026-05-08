@@ -1257,3 +1257,78 @@ button, input, textarea, select {
   background: var(--night-mid);
   border-radius: 12px;
 }
+
+/* ─── App shell & bottom tabs ─── */
+
+.app-shell {
+  min-height: 100vh;
+  padding-bottom: 84px;
+}
+
+.bottom-tabs {
+  position: fixed;
+  left: 50%;
+  bottom: 0;
+  transform: translateX(-50%);
+  width: min(640px, 100%);
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 4px;
+  padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
+  background: rgba(11, 16, 38, 0.96);
+  border-top: 1px solid rgba(168, 180, 214, 0.14);
+  box-sizing: border-box;
+  z-index: 10;
+}
+
+.bottom-tab {
+  border: 0;
+  background: transparent;
+  color: var(--text-secondary);
+  padding: 8px 4px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.bottom-tab.active {
+  color: var(--night-deep);
+  background: var(--moonbeam);
+  font-weight: 700;
+}
+
+/* ─── Grid layouts ─── */
+
+.metric-grid,
+.plan-grid,
+.today-action-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+
+.metric-card,
+.plan-card,
+.daily-card,
+.settings-card {
+  border: 1px solid rgba(168, 180, 214, 0.12);
+  background: var(--night-surface);
+  border-radius: var(--radius-md);
+  padding: 16px;
+}
+
+/* ─── Diary form ─── */
+
+.diary-form {
+  display: grid;
+  gap: 14px;
+}
+
+/* ─── Timer display ─── */
+
+.timer-display {
+  font-size: 48px;
+  font-weight: 700;
+  color: var(--moonbeam);
+  text-align: center;
+}
