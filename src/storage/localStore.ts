@@ -1,4 +1,4 @@
-import type { AssessmentResult, ChatMessage, FeedbackEvent, KnowledgeResponse, SleepProfile, SleepScenario } from '../domain/types';
+import type { AssessmentResult, ChatMessage, FeedbackEvent, KnowledgeResponse, RelaxationSession, ReminderSettings, SleepDiaryEntry, SleepProfile, SleepScenario } from '../domain/types';
 
 export type ChatHistoryScope = 'general' | SleepScenario;
 type ScopedChatHistories = Partial<Record<ChatHistoryScope, ChatMessage[]>>;
@@ -9,6 +9,9 @@ const keys = {
   feedbackEvents: 'feedbackEvents',
   assessmentResult: 'assessmentResult',
   knowledgeCache: 'knowledgeCache',
+  diaryEntries: 'sleepDiaryEntries',
+  reminderSettings: 'reminderSettings',
+  relaxationSessions: 'relaxationSessions',
 } as const;
 
 const memoryStore = new Map<string, string>();
@@ -105,10 +108,37 @@ export function saveKnowledgeCache(cache: KnowledgeCache): void {
   writeJson(keys.knowledgeCache, cache);
 }
 
+export function getDiaryEntries(): SleepDiaryEntry[] {
+  return readJson<SleepDiaryEntry[]>(keys.diaryEntries, []);
+}
+
+export function saveDiaryEntries(entries: SleepDiaryEntry[]): void {
+  writeJson(keys.diaryEntries, entries);
+}
+
+export function getReminderSettings(): ReminderSettings | null {
+  return readJson<ReminderSettings | null>(keys.reminderSettings, null);
+}
+
+export function saveReminderSettings(settings: ReminderSettings): void {
+  writeJson(keys.reminderSettings, settings);
+}
+
+export function getRelaxationSessions(): RelaxationSession[] {
+  return readJson<RelaxationSession[]>(keys.relaxationSessions, []);
+}
+
+export function saveRelaxationSessions(sessions: RelaxationSession[]): void {
+  writeJson(keys.relaxationSessions, sessions);
+}
+
 export function clearAllLocalData(): void {
   removeKey(keys.profile);
   removeKey(keys.chatHistory);
   removeKey(keys.feedbackEvents);
   removeKey(keys.assessmentResult);
   removeKey(keys.knowledgeCache);
+  removeKey(keys.diaryEntries);
+  removeKey(keys.reminderSettings);
+  removeKey(keys.relaxationSessions);
 }

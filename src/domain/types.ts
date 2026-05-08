@@ -137,3 +137,22 @@ export interface DiarySummary {
   averageAwakenings: number | null;
   averageSleepQuality: number | null;
 }
+
+export interface ReminderSettings extends SyncRecord {
+  bedtimeEnabled: boolean;
+  bedtimeTime: string;
+  wakeEnabled: boolean;
+  wakeTime: string;
+  lastBedtimeAckDate: string | null;
+  lastWakeAckDate: string | null;
+}
+
+export type RelaxationSessionStatus = 'started' | 'completed';
+
+export interface RelaxationSession extends SyncRecord {
+  toolId: string;
+  startedAt: string;
+  completedAt: string | null;
+  durationSeconds: number;
+  status: RelaxationSessionStatus;
+}

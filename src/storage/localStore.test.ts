@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { clearAllLocalData, getAssessmentResult, getChatHistory, getFeedbackEvents, getKnowledgeCache, getScopedChatHistory, getSleepProfile, saveAssessmentResult, saveChatHistory, saveFeedbackEvents, saveKnowledgeCache, saveScopedChatHistory, saveSleepProfile } from './localStore';
-import type { SleepProfile } from '../domain/types';
+import { clearAllLocalData, getAssessmentResult, getChatHistory, getDiaryEntries, getFeedbackEvents, getKnowledgeCache, getRelaxationSessions, getReminderSettings, getScopedChatHistory, getSleepProfile, saveAssessmentResult, saveChatHistory, saveDiaryEntries, saveFeedbackEvents, saveKnowledgeCache, saveRelaxationSessions, saveReminderSettings, saveScopedChatHistory, saveSleepProfile } from './localStore';
+import type { SleepDiaryEntry, SleepProfile } from '../domain/types';
 import type { AssessmentResult, KnowledgeResponse } from '../domain/types';
 
 const profile: SleepProfile = {
@@ -138,5 +138,46 @@ describe('localStore', () => {
     clearAllLocalData();
     expect(getAssessmentResult()).toBeNull();
     expect(getKnowledgeCache()).toEqual({});
+  });
+
+  it('stores diary entries, reminder settings, and relaxation sessions', () => {
+    const entry: SleepDiaryEntry = {
+      id: 'diary-2026-05-08',
+      date: '2026-05-08',
+      bedtimeCheckin: null,
+      wakeCheckin: null,
+      createdAt: '2026-05-08T00:00:00.000Z',
+      updatedAt: '2026-05-08T00:00:00.000Z',
+      version: 1,
+    };
+
+    saveDiaryEntries([entry]);
+    saveReminderSettings({
+      id: 'reminder-settings',
+      bedtimeEnabled: true,
+      bedtimeTime: '22:30',
+      wakeEnabled: true,
+      wakeTime: '07:00',
+      lastBedtimeAckDate: null,
+      lastWakeAckDate: null,
+      createdAt: '2026-05-08T00:00:00.000Z',
+      updatedAt: '2026-05-08T00:00:00.000Z',
+      version: 1,
+    });
+    saveRelaxationSessions([{
+      id: 'session-1',
+      toolId: 'breathing-478',
+      startedAt: '2026-05-08T22:00:00.000Z',
+      completedAt: '2026-05-08T22:04:00.000Z',
+      durationSeconds: 240,
+      status: 'completed',
+      createdAt: '2026-05-08T22:00:00.000Z',
+      updatedAt: '2026-05-08T22:04:00.000Z',
+      version: 2,
+    }]);
+
+    expect(getDiaryEntries()).toEqual([entry]);
+    expect(getReminderSettings()?.bedtimeTime).toBe('22:30');
+    expect(getRelaxationSessions()).toHaveLength(1);
   });
 });
