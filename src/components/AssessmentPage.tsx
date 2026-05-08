@@ -1,29 +1,32 @@
 import { useState } from 'react';
 import { isiQuestions, psqiLiteQuestions, buildAssessmentResult } from '../domain/assessment';
 import type { AssessmentQuestion } from '../domain/assessment';
-import type { AssessmentResult } from '../domain/types';
+import type { AssessmentResult, SleepProfile } from '../domain/types';
 import { saveAssessmentResult } from '../storage/localStore';
 
 interface Props {
+  profile: SleepProfile;
   onComplete: (result: AssessmentResult) => void;
+  onBack: () => void;
 }
 
 interface RatingRowProps {
   question: AssessmentQuestion;
+  group: 'isi' | 'psqi';
   value: number | undefined;
   onChange: (id: number, value: number) => void;
 }
 
-function RatingRow({ question, value, onChange }: RatingRowProps) {
+function RatingRow({ question, group, value, onChange }: RatingRowProps) {
   return (
-    <div className="rating-row" data-testid={`rating-row-${question.id}`}>
+    <div className="rating-row" data-testid={`rating-row-${group}-${question.id}`}>
       <span className="rating-label">{question.label}</span>
       <div className="rating-options">
         {question.options.map((opt) => (
           <label key={opt.value} className="rating-option">
             <input
               type="radio"
-              name={`q-${question.id}`}
+              name={`${group}-q-${question.id}`}
               value={opt.value}
               checked={value === opt.value}
               onChange={() => onChange(question.id, opt.value)}
@@ -41,9 +44,25 @@ interface AssessmentReportProps {
 }
 
 function AssessmentReport({ result }: AssessmentReportProps) {
+  const hasRisk = result.riskFlags.length > 0;
+  const overall = hasRisk
+    ? '本次自测提示存在需要关注的睡眠风险，建议优先稳定作息并考虑专业评估。'
+    : '本次自测未发现明显高风险信号，可以先从规律作息和睡前习惯开始改善。';
+  const nextActions = [
+    '固定每天起床时间，包括周末也尽量保持一致。',
+    '连续记录 7 天上床时间、入睡估计时间、夜醒次数和白天精神状态。',
+    '睡前 30 分钟减少手机、工作消息和高刺激内容。',
+    '如果睡眠问题持续加重或明显影响白天功能，建议咨询专业医生或睡眠门诊。',
+  ];
+
   return (
     <div className="assessment-report" data-testid="assessment-report">
-      <h2 className="report-title">评估报告</h2>
+      <h2 className="report-title">睡眠自测报告</h2>
+
+      <div className="report-section">
+        <h3>总体结论</h3>
+        <p className="report-summary">{overall}</p>
+      </div>
 
       <div className="report-section">
         <h3>失眠严重程度指数 (ISI)</h3>
@@ -53,16 +72,18 @@ function AssessmentReport({ result }: AssessmentReportProps) {
         </div>
         <p className="report-level">{getIsiLevelLabel(result.isi.level)}</p>
         <p className="report-summary">{result.isi.summary}</p>
+        <p className="report-hint">分数越高表示主观失眠困扰越明显。该分数用于自我筛查，不等同于医疗诊断。</p>
       </div>
 
       <div className="report-section">
-        <h3>睡眠质量 (PSQI 简化版)</h3>
+        <h3>简化睡眠质量筛查</h3>
         <div className="report-score">
           <span className="score-number">{result.psqiLite.score}</span>
-          <span className="score-label">/ 18</span>
+          <span className="score-label">/ 24</span>
         </div>
         <p className="report-level">{getPsqiLevelLabel(result.psqiLite.level)}</p>
         <p className="report-summary">{result.psqiLite.summary}</p>
+        <p className="report-hint">该结果是简化睡眠质量筛查，用于帮助发现作息、睡眠连续性和白天功能的变化。</p>
       </div>
 
       {result.riskFlags.length > 0 && (
@@ -75,6 +96,15 @@ function AssessmentReport({ result }: AssessmentReportProps) {
           </ul>
         </div>
       )}
+      <div className="report-section">
+        <h3>下一步建议</h3>
+        <ul>
+          {nextActions.map((action) => (
+            <li key={action}>{action}</li>
+          ))}
+        </ul>
+      </div>
+      <p className="fine-print">本内容仅提供健康管理参考，不作为医疗诊断。</p>
     </div>
   );
 }
@@ -98,7 +128,7 @@ function getPsqiLevelLabel(level: string): string {
   return labels[level] ?? level;
 }
 
-export function AssessmentPage({ onComplete }: Props) {
+export function AssessmentPage({ profile, onComplete, onBack }: Props) {
   const [isiAnswers, setIsiAnswers] = useState<Record<number, number>>({});
   const [psqiAnswers, setPsqiAnswers] = useState<Record<number, number>>({});
   const [showReport, setShowReport] = useState(false);
@@ -119,11 +149,11 @@ export function AssessmentPage({ onComplete }: Props) {
 
   const handleSubmit = () => {
     if (!allAnswered) {
-      setError('请回答所有问题');
+      setError('请完成所有题目后再生成报告');
       return;
     }
     setError(null);
-    const assessmentResult = buildAssessmentResult(isiAnswers, psqiAnswers);
+    const assessmentResult = buildAssessmentResult({ isiAnswers, psqiLiteAnswers: psqiAnswers, profile });
     saveAssessmentResult(assessmentResult);
     setResult(assessmentResult);
     setShowReport(true);
@@ -131,13 +161,19 @@ export function AssessmentPage({ onComplete }: Props) {
   };
 
   if (showReport && result) {
-    return <AssessmentReport result={result} />;
+    return (
+      <div className="page assessment-page">
+        <button type="button" className="back-btn" onClick={onBack}>返回首页</button>
+        <AssessmentReport result={result} />
+      </div>
+    );
   }
 
   return (
     <div className="page assessment-page">
       <div className="panel">
-        <h1>睡眠评估问卷</h1>
+        <button type="button" className="back-btn" onClick={onBack}>返回首页</button>
+        <h1>睡眠自测</h1>
         <p className="form-subtitle">请根据过去一周的睡眠情况作答</p>
 
         <div className="assessment-section">
@@ -147,6 +183,7 @@ export function AssessmentPage({ onComplete }: Props) {
               <RatingRow
                 key={q.id}
                 question={q}
+                group="isi"
                 value={isiAnswers[q.id]}
                 onChange={handleIsiChange}
               />
@@ -161,6 +198,7 @@ export function AssessmentPage({ onComplete }: Props) {
               <RatingRow
                 key={q.id}
                 question={q}
+                group="psqi"
                 value={psqiAnswers[q.id]}
                 onChange={handlePsqiChange}
               />
@@ -171,7 +209,7 @@ export function AssessmentPage({ onComplete }: Props) {
         {error && <p className="error" role="alert">{error}</p>}
 
         <button className="primary-button" onClick={handleSubmit}>
-          提交评估
+          生成自测报告
         </button>
       </div>
     </div>

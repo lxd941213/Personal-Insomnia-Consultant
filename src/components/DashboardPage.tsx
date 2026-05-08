@@ -15,8 +15,8 @@ interface DashboardPageProps {
   profile: SleepProfile;
   assessmentResult: AssessmentResult | null;
   onStartAssessment: () => void;
-  onOpenKnowledge: () => void;
-  onOpenChat: (scenario: SleepScenario) => void;
+  onOpenKnowledge: (scenario?: SleepScenario) => void;
+  onOpenChat: (scenario?: SleepScenario) => void;
   onReset: () => void;
 }
 
@@ -68,8 +68,11 @@ export function DashboardPage({
         <button type="button" className="action-btn" onClick={onStartAssessment}>
           睡眠评估
         </button>
-        <button type="button" className="action-btn" onClick={onOpenKnowledge}>
+        <button type="button" className="action-btn" onClick={() => onOpenKnowledge()}>
           睡眠知识
+        </button>
+        <button type="button" className="action-btn" onClick={() => onOpenChat()}>
+          继续咨询
         </button>
       </div>
     </main>

@@ -4,9 +4,10 @@ import { AssessmentPage } from './components/AssessmentPage';
 import { ChatPage } from './components/ChatPage';
 import { DashboardPage } from './components/DashboardPage';
 import { EntryPage } from './components/EntryPage';
+import { KnowledgePage } from './components/KnowledgePage';
 import { ProfileWizard } from './components/ProfileWizard';
-import type { AssessmentResult, SleepProfile } from './domain/types';
-import { getAssessmentResult, getSleepProfile, saveSleepProfile } from './storage/localStore';
+import type { AssessmentResult, SleepProfile, SleepScenario } from './domain/types';
+import { clearAllLocalData, getAssessmentResult, getSleepProfile, saveSleepProfile } from './storage/localStore';
 
 type View = 'entry' | 'profile' | 'dashboard' | 'assessment' | 'knowledge' | 'chat';
 
@@ -16,6 +17,7 @@ export default function App() {
     getAssessmentResult(),
   );
   const [view, setView] = useState<View>(() => (getSleepProfile() ? 'dashboard' : 'entry'));
+  const [selectedScenario, setSelectedScenario] = useState<SleepScenario | null>(null);
 
   function completeProfile(nextProfile: SleepProfile) {
     saveSleepProfile(nextProfile);
@@ -24,8 +26,21 @@ export default function App() {
   }
 
   function resetProfile() {
+    clearAllLocalData();
     setProfile(null);
+    setAssessmentResult(null);
+    setSelectedScenario(null);
     setView('profile');
+  }
+
+  function openChat(scenario?: SleepScenario) {
+    setSelectedScenario(scenario ?? null);
+    setView('chat');
+  }
+
+  function openKnowledge(scenario?: SleepScenario) {
+    setSelectedScenario(scenario ?? null);
+    setView('knowledge');
   }
 
   if (view === 'entry') {
@@ -42,8 +57,8 @@ export default function App() {
         profile={profile}
         assessmentResult={assessmentResult}
         onStartAssessment={() => setView('assessment')}
-        onOpenKnowledge={() => setView('knowledge')}
-        onOpenChat={() => setView('chat')}
+        onOpenKnowledge={openKnowledge}
+        onOpenChat={openChat}
         onReset={resetProfile}
       />
     );
@@ -52,15 +67,35 @@ export default function App() {
   if (view === 'assessment') {
     return (
       <AssessmentPage
+        profile={profile}
         onComplete={(result) => {
           setAssessmentResult(result);
-          setView('dashboard');
         }}
+        onBack={() => setView('dashboard')}
       />
     );
   }
 
-  // Temporary routing for assessment/knowledge/chat until later tasks
-  // assessment and knowledge will show ChatPage as placeholder
-  return <ChatPage profile={profile} onReset={resetProfile} />;
+  if (view === 'knowledge') {
+    return (
+      <KnowledgePage
+        profile={profile}
+        assessmentResult={assessmentResult}
+        initialScenario={selectedScenario ?? undefined}
+        onBack={() => setView('dashboard')}
+      />
+    );
+  }
+
+  // view === 'chat'
+  return (
+    <ChatPage
+      profile={profile}
+      chatScope={selectedScenario ?? 'general'}
+      assessmentResult={assessmentResult}
+      initialScenario={selectedScenario}
+      onBack={() => setView('dashboard')}
+      onReset={resetProfile}
+    />
+  );
 }

@@ -60,32 +60,39 @@ export type SleepScenario =
   | 'wellness_regulation';
 
 // Assessment domain types
-export type IsiLevel = 'normal' | 'mild' | 'moderate' | 'severe';
-export type PsqiLevel = 'normal' | 'mild' | 'moderate' | 'severe';
-
-export interface AssessmentSectionResult {
-  score: number;
-  level: IsiLevel | PsqiLevel;
-  label: string;
-  summary: string;
-}
+export type IsiLevel = 'none' | 'mild' | 'moderate' | 'severe';
+export type PsqiLevel = 'good' | 'fair' | 'poor';
 
 export interface AssessmentResult {
-  isiScore: number;
-  isiLevel: IsiLevel;
-  psqiScore: number;
-  psqiLevel: PsqiLevel;
-  riskFlag: boolean;
+  completedAt: string;
+  isi: {
+    answers: number[];
+    score: number;
+    level: IsiLevel;
+    summary: string;
+  };
+  psqiLite: {
+    answers: number[];
+    score: number;
+    level: PsqiLevel;
+    summary: string;
+  };
+  riskFlags: string[];
 }
 
 export interface KnowledgeCard {
-  scenario: SleepScenario;
   title: string;
-  content: string;
-  tags: string[];
+  summary: string;
+  keyPoints: string[];
+  misconceptions: string[];
+  actions: Suggestion[];
+  safetyNote: string | null;
+  followUpQuestions: string[];
 }
 
 export interface KnowledgeResponse {
+  scenario: SleepScenario;
   cards: KnowledgeCard[];
   disclaimer: string;
+  generatedAt: string;
 }

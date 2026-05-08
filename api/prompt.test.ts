@@ -21,7 +21,7 @@ describe('buildSleepAdvisorPrompt', () => {
 
     expect(prompt).toContain('25-34');
     expect(prompt).toContain('01:00');
-    expect(prompt).toContain('not medical diagnosis');
+    expect(prompt).toContain('不作为医疗诊断');
     expect(prompt).toContain('JSON');
   });
 });

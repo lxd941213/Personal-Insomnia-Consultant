@@ -187,4 +187,32 @@ describe('chat api', () => {
     expect(capturedPrompt).toContain('最近一次睡眠自测');
     expect(capturedPrompt).toContain('ISI：15 分');
   });
+
+  it('includes hidden scene context in prompt when provided', async () => {
+    let capturedPrompt = '';
+    vi.mocked(callAiProvider).mockImplementation(async (prompt: string) => {
+      capturedPrompt = prompt;
+      return {
+        content: JSON.stringify({
+          riskLevel: 'normal',
+          summary: 'Test response',
+          possibleFactors: [],
+          suggestions: [],
+          nextQuestions: [],
+          seekCareNotice: null,
+          disclaimer: 'Test',
+        }),
+      };
+    });
+
+    const res = mockRes();
+    await handler({
+      method: 'POST',
+      body: { profile, message: '我躺下很久都睡不着', history: [], scenario: 'hard_to_fall_asleep' },
+    } as never, res as never);
+
+    expect(res.statusCode).toBe(200);
+    expect(capturedPrompt).toContain('当前咨询场景：入睡困难');
+    expect(capturedPrompt).toContain('难以在合理时间内入睡');
+  });
 });

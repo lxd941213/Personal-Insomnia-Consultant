@@ -57,7 +57,7 @@ describe('DashboardPage', () => {
 
     // Scene cards
     expect(screen.getByRole('button', { name: /入睡困难/ })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /晚睡习惯/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /熬夜习惯/ })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /压力焦虑/ })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /睡眠质量差/ })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /养生调理/ })).toBeInTheDocument();

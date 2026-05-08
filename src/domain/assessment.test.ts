@@ -7,6 +7,20 @@ import {
   buildAssessmentResult,
 } from './assessment';
 import { sleepScenarios, getScenarioDefinition, buildScenePrompt } from './scenarios';
+import type { SleepProfile } from './types';
+
+const profile: SleepProfile = {
+  ageRange: '25-34岁',
+  bedtime: '01:00',
+  wakeTime: '08:00',
+  mainConcern: 'hard_to_fall_asleep',
+  concernDuration: '1-3个月',
+  stressLevel: '较高',
+  habits: ['睡前玩手机'],
+  daytimeImpact: '白天疲惫',
+  safetySignals: [],
+  optionalContext: '',
+};
 
 describe('ISI Questions (Chinese)', () => {
   it('should have 7 items', () => {
@@ -43,10 +57,10 @@ describe('PSQILite Questions (Chinese)', () => {
 });
 
 describe('getIsiLevel', () => {
-  it('returns normal for scores 0-7', () => {
-    expect(getIsiLevel(0)).toBe('normal');
-    expect(getIsiLevel(5)).toBe('normal');
-    expect(getIsiLevel(7)).toBe('normal');
+  it('returns none for scores 0-7', () => {
+    expect(getIsiLevel(0)).toBe('none');
+    expect(getIsiLevel(5)).toBe('none');
+    expect(getIsiLevel(7)).toBe('none');
   });
 
   it('returns mild for scores 8-14', () => {
@@ -66,24 +80,19 @@ describe('getIsiLevel', () => {
 });
 
 describe('getPsqiLiteLevel', () => {
-  it('returns normal for scores 0-4', () => {
-    expect(getPsqiLiteLevel(0)).toBe('normal');
-    expect(getPsqiLiteLevel(4)).toBe('normal');
+  it('returns good for scores 0-5', () => {
+    expect(getPsqiLiteLevel(0)).toBe('good');
+    expect(getPsqiLiteLevel(5)).toBe('good');
   });
 
-  it('returns mild for scores 5-7', () => {
-    expect(getPsqiLiteLevel(5)).toBe('mild');
-    expect(getPsqiLiteLevel(7)).toBe('mild');
+  it('returns fair for scores 6-11', () => {
+    expect(getPsqiLiteLevel(6)).toBe('fair');
+    expect(getPsqiLiteLevel(11)).toBe('fair');
   });
 
-  it('returns moderate for scores 8-14', () => {
-    expect(getPsqiLiteLevel(8)).toBe('moderate');
-    expect(getPsqiLiteLevel(14)).toBe('moderate');
-  });
-
-  it('returns severe for scores 15-21', () => {
-    expect(getPsqiLiteLevel(15)).toBe('severe');
-    expect(getPsqiLiteLevel(21)).toBe('severe');
+  it('returns poor for scores 12-24', () => {
+    expect(getPsqiLiteLevel(12)).toBe('poor');
+    expect(getPsqiLiteLevel(24)).toBe('poor');
   });
 });
 
@@ -91,23 +100,66 @@ describe('buildAssessmentResult', () => {
   it('builds result with correct ISI level', () => {
     const isiAnswers = { 0: 2, 1: 3, 2: 1, 3: 0, 4: 4, 5: 2, 6: 1 }; // total = 13
     const psqiAnswers = {};
-    const result = buildAssessmentResult(isiAnswers, psqiAnswers);
-    expect(result.isiLevel).toBe('mild');
-    expect(result.isiScore).toBe(13);
+    const result = buildAssessmentResult({ isiAnswers, psqiLiteAnswers: psqiAnswers, profile });
+    expect(result.isi.level).toBe('mild');
+    expect(result.isi.score).toBe(13);
   });
 
-  it('sets risk flag for high ISI', () => {
+  it('sets risk flags for severe ISI', () => {
     const isiAnswers = { 0: 4, 1: 4, 2: 4, 3: 4, 4: 4, 5: 4, 6: 4 }; // total = 28
     const psqiAnswers = {};
-    const result = buildAssessmentResult(isiAnswers, psqiAnswers);
-    expect(result.riskFlag).toBe(true);
+    const result = buildAssessmentResult({ isiAnswers, psqiLiteAnswers: psqiAnswers, profile });
+    expect(result.riskFlags).toContain('失眠严重度较高');
   });
 
-  it('sets risk flag for high PSQI', () => {
+  it('sets risk flags for poor PSQI', () => {
     const isiAnswers = { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 }; // total = 0
     const psqiAnswers = { 0: 4, 1: 4, 2: 4, 3: 4, 4: 4, 5: 4 }; // total = 24
-    const result = buildAssessmentResult(isiAnswers, psqiAnswers);
-    expect(result.riskFlag).toBe(true);
+    const result = buildAssessmentResult({ isiAnswers, psqiLiteAnswers: psqiAnswers, profile });
+    expect(result.riskFlags).toContain('睡眠质量较差');
+    expect(result.riskFlags).toContain('实际睡眠时长明显不足');
+    expect(result.riskFlags).toContain('白天功能受影响较明显');
+    expect(result.riskFlags).toContain('存在助眠药物或酒精依赖风险');
+  });
+
+  it('returns nested structure with completedAt', () => {
+    const isiAnswers = { 0: 1, 1: 1, 2: 1, 3: 1, 4: 1, 5: 1, 6: 1 }; // total = 7
+    const psqiAnswers = {};
+    const result = buildAssessmentResult({ isiAnswers, psqiLiteAnswers: psqiAnswers, profile });
+    expect(result.completedAt).toBeDefined();
+    expect(result.isi).toBeDefined();
+    expect(result.isi.answers).toEqual([1, 1, 1, 1, 1, 1, 1]);
+    expect(result.psqiLite).toBeDefined();
+    expect(result.psqiLite.answers).toEqual([]);
+    expect(result.riskFlags).toEqual([]);
+  });
+
+  it('returns correct ISI summary for none level', () => {
+    const isiAnswers = { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 }; // total = 0
+    const psqiAnswers = {};
+    const result = buildAssessmentResult({ isiAnswers, psqiLiteAnswers: psqiAnswers, profile });
+    expect(result.isi.level).toBe('none');
+    expect(result.isi.summary).toContain('未显示明显失眠倾向');
+  });
+
+  it('returns correct PSQI summary for good level', () => {
+    const isiAnswers = {};
+    const psqiAnswers = { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }; // total = 0
+    const result = buildAssessmentResult({ isiAnswers, psqiLiteAnswers: psqiAnswers, profile });
+    expect(result.psqiLite.level).toBe('good');
+    expect(result.psqiLite.summary).toContain('整体睡眠质量较好');
+  });
+
+  it('includes profile safety signals as risk flags', () => {
+    const isiAnswers = { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 };
+    const psqiAnswers = { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+    const result = buildAssessmentResult({
+      isiAnswers,
+      psqiLiteAnswers: psqiAnswers,
+      profile: { ...profile, safetySignals: ['疑似睡眠呼吸暂停'] },
+    });
+
+    expect(result.riskFlags).toContain('存在安全信号：疑似睡眠呼吸暂停');
   });
 });
 
@@ -120,6 +172,16 @@ describe('sleepScenarios', () => {
     sleepScenarios.forEach((s) => {
       expect(s.label).toMatch(/[一-龥]/);
     });
+  });
+
+  it('uses the required Chinese labels from the plan', () => {
+    expect(sleepScenarios.map((s) => s.label)).toEqual([
+      '入睡困难',
+      '睡眠质量差',
+      '压力焦虑',
+      '熬夜习惯',
+      '养生调理',
+    ]);
   });
 
   it('should contain expected scenario IDs', () => {
@@ -136,11 +198,11 @@ describe('getScenarioDefinition', () => {
   it('returns definition for valid scenario', () => {
     const def = getScenarioDefinition('hard_to_fall_asleep');
     expect(def).toBeDefined();
-    expect(def.id).toBe('hard_to_fall_asleep');
+    expect(def?.id).toBe('hard_to_fall_asleep');
   });
 
   it('returns undefined for invalid scenario', () => {
-    const def = getScenarioDefinition('invalid_scenario');
+    const def = getScenarioDefinition('invalid_scenario' as never);
     expect(def).toBeUndefined();
   });
 });

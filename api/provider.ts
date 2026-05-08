@@ -2,6 +2,16 @@ export interface AiProviderResult {
   content: string;
 }
 
+function resolveChatCompletionsUrl(baseUrl: string): string {
+  const url = new URL(baseUrl);
+  if (url.pathname === '/v1' || url.pathname === '/v1/') {
+    url.pathname = '/v1/chat/completions';
+  } else if (url.pathname === '/api/v1' || url.pathname === '/api/v1/') {
+    url.pathname = '/api/v1/chat/completions';
+  }
+  return url.toString();
+}
+
 export async function callAiProvider(prompt: string): Promise<AiProviderResult> {
   const apiKey = process.env.AI_API_KEY;
   const baseUrl = process.env.AI_BASE_URL || 'https://api.openai.com/v1/chat/completions';
@@ -20,7 +30,7 @@ export async function callAiProvider(prompt: string): Promise<AiProviderResult> 
     throw new Error('Invalid AI_BASE_URL');
   }
 
-  const response = await fetch(baseUrl, {
+  const response = await fetch(resolveChatCompletionsUrl(baseUrl), {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${apiKey}`,
@@ -29,7 +39,8 @@ export async function callAiProvider(prompt: string): Promise<AiProviderResult> 
     body: JSON.stringify({
       model,
       messages: [{ role: 'user', content: prompt }],
-      temperature: 0.3,
+      temperature: 1,
+      reasoning_split: true,
     }),
   });
 
@@ -37,7 +48,7 @@ export async function callAiProvider(prompt: string): Promise<AiProviderResult> 
     throw new Error(`AI provider failed with ${response.status}`);
   }
 
-  const json = await response.json();
+  const json = await response.json() as { choices?: Array<{ message?: { content?: unknown } }> };
   const content = json?.choices?.[0]?.message?.content;
 
   if (typeof content !== 'string') {

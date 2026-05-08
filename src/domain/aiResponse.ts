@@ -5,7 +5,11 @@ function isStringArray(value: unknown): value is string[] {
   return Array.isArray(value) && value.every((item) => typeof item === 'string');
 }
 
-function isSuggestionArray(value: unknown): value is Suggestion[] {
+function normalizeSuggestions(value: unknown): Suggestion[] | null {
+  if (isStringArray(value)) {
+    return value.map((item) => ({ title: item, detail: item }));
+  }
+
   return (
     Array.isArray(value) &&
     value.every(
@@ -15,13 +19,13 @@ function isSuggestionArray(value: unknown): value is Suggestion[] {
         typeof (item as Suggestion).title === 'string' &&
         typeof (item as Suggestion).detail === 'string',
     )
-  );
+  ) ? value : null;
 }
 
 export function safeFallbackResponse(): AiResponse {
   return {
     riskLevel: 'high_risk',
-    summary: 'We were unable to generate a reliable personalized response.',
+    summary: '无法生成可靠的个性化回复',
     possibleFactors: [],
     suggestions: [],
     nextQuestions: [],
@@ -36,11 +40,12 @@ export function normalizeAiResponse(payload: unknown): AiResponse {
   }
 
   const input = payload as Partial<AiResponse>;
+  const suggestions = normalizeSuggestions(input.suggestions);
   if (
     (input.riskLevel !== 'normal' && input.riskLevel !== 'high_risk') ||
     typeof input.summary !== 'string' ||
     !isStringArray(input.possibleFactors) ||
-    !isSuggestionArray(input.suggestions) ||
+    !suggestions ||
     !isStringArray(input.nextQuestions)
   ) {
     return safeFallbackResponse();
@@ -50,7 +55,7 @@ export function normalizeAiResponse(payload: unknown): AiResponse {
     riskLevel: input.riskLevel,
     summary: input.summary,
     possibleFactors: input.possibleFactors,
-    suggestions: input.suggestions,
+    suggestions,
     nextQuestions: input.nextQuestions,
     seekCareNotice: input.riskLevel === 'high_risk' ? input.seekCareNotice || defaultCareNotice : input.seekCareNotice ?? null,
     disclaimer: input.disclaimer || defaultDisclaimer,

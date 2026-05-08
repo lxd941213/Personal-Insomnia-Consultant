@@ -10,6 +10,10 @@ Mobile-first H5 MVP for a sleep wellness AI consultant.
 - Structured AI response rendering.
 - Useful/not useful local feedback.
 - Browser-only local persistence.
+- Sleep assessment (ISI + PSQI-Lite) with risk flags.
+- AI-powered sleep knowledge cards with caching.
+- Scene-based consultation with scenario prompts.
+- Bilingual Chinese/English interface (Chinese UI).
 
 ## Local Development
 

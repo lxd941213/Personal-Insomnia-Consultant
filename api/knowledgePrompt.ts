@@ -7,7 +7,7 @@ export function buildKnowledgePrompt(
 ): string {
   const scenarioDescriptions: Record<SleepScenario, string> = {
     hard_to_fall_asleep: '入睡困难',
-    late_night_habit: '晚睡习惯',
+    late_night_habit: '熬夜习惯',
     stress_anxiety: '压力焦虑',
     poor_sleep_quality: '睡眠质量差',
     wellness_regulation: '养生调理',
@@ -43,17 +43,22 @@ export function buildKnowledgePrompt(
     '\n' +
     '你必须用中文回答。\n' +
     '\n' +
-    '任务：根据用户的睡眠档案、场景和评估结果，生成知识卡片数组。\n' +
+    '任务：根据用户的睡眠档案、场景和评估结果，生成结构化知识卡片数组。\n' +
     '\n' +
     '要求：\n' +
     '1. 返回严格的中文 JSON 对象，格式如下：\n' +
     '{\n' +
+    '  "scenario": "' + scenario + '",\n' +
+    '  "generatedAt": "' + new Date().toISOString() + '",\n' +
     '  "cards": [\n' +
     '    {\n' +
-    '      "scenario": "场景ID",\n' +
     '      "title": "卡片标题",\n' +
-    '      "content": "卡片内容（100-300字）",\n' +
-    '      "tags": ["标签1", "标签2", "标签3"]\n' +
+    '      "summary": "简短解释",\n' +
+    '      "keyPoints": ["要点"],\n' +
+    '      "misconceptions": ["常见误区"],\n' +
+    '      "actions": [{"title": "行动标题", "detail": "具体做法"}],\n' +
+    '      "safetyNote": null,\n' +
+    '      "followUpQuestions": ["可以继续问的问题"]\n' +
     '    }\n' +
     '  ],\n' +
     '  "disclaimer": "本内容仅提供健康管理参考，不作为医疗诊断。"\n' +
@@ -61,10 +66,13 @@ export function buildKnowledgePrompt(
     '\n' +
     '2. cards 数组应包含 2-4 张知识卡片\n' +
     '3. 每张卡片应包含：\n' +
-    '   - scenario: 必须与输入的场景一致\n' +
     '   - title: 简洁有力的标题（10-20字）\n' +
-    '   - content: 科学、通俗、实用的内容（100-300字）\n' +
-    '   - tags: 3-5 个相关标签\n' +
+    '   - summary: 科学、通俗、实用的解释\n' +
+    '   - keyPoints: 2-4 个关键要点\n' +
+    '   - misconceptions: 1-3 个常见误区\n' +
+    '   - actions: 1-3 个可执行建议\n' +
+    '   - safetyNote: 可为 null；高风险时给出谨慎提示\n' +
+    '   - followUpQuestions: 1-3 个后续问题\n' +
     '\n' +
     '4. 内容应该：\n' +
     '   - 解释问题的原因和影响\n' +

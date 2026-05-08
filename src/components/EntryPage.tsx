@@ -5,16 +5,20 @@ interface EntryPageProps {
 export function EntryPage({ onStart }: EntryPageProps) {
   return (
     <main className="page entry-page">
+      <div className="orb orb-1" />
+      <div className="orb orb-2" />
+      <div className="orb orb-3" />
       <section className="hero">
-        <p className="eyebrow">Sleep wellness AI consultant</p>
-        <h1>Get personal sleep guidance in a few minutes.</h1>
+        <div className="moon-icon">☽</div>
+        <p className="eyebrow">睡眠健康 AI 顾问</p>
+        <h1>几分钟内<br/>获得个性化睡眠指导</h1>
         <p className="hero-copy">
-          Create a short sleep profile, then ask about falling asleep, late-night habits, stress, and sleep quality.
+          创建简单睡眠档案，然后咨询入睡困难、夜间习惯、压力与睡眠质量等问题
         </p>
-        <button className="primary-button" onClick={onStart}>Create sleep profile</button>
+        <button className="primary-button" onClick={onStart}>创建睡眠档案</button>
       </section>
       <section className="notice">
-        This tool provides health management reference only. It is not medical diagnosis and does not replace professional care.
+        本工具仅提供健康管理参考，不是医疗诊断，不能替代专业诊疗
       </section>
     </main>
   );

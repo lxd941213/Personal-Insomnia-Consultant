@@ -6,12 +6,17 @@ import { callAiProvider } from './provider';
 vi.mock('./provider', () => ({
   callAiProvider: vi.fn(async () => ({
     content: JSON.stringify({
+      scenario: 'hard_to_fall_asleep',
+      generatedAt: '2026-05-08T08:00:00.000Z',
       cards: [
         {
-          scenario: 'hard_to_fall_asleep',
           title: '入睡困难改善建议',
-          content: '建议保持规律作息，减少睡前屏幕使用时间。',
-          tags: ['入睡困难', '睡眠卫生'],
+          summary: '建议保持规律作息，减少睡前屏幕使用时间。',
+          keyPoints: ['固定起床时间'],
+          misconceptions: ['躺得越久越容易睡着'],
+          actions: [{ title: '减少屏幕刺激', detail: '睡前 30 分钟放下手机。' }],
+          safetyNote: null,
+          followUpQuestions: ['下午是否喝咖啡？'],
         },
       ],
       disclaimer: '本内容仅提供健康管理参考，不作为医疗诊断。',
@@ -83,6 +88,7 @@ describe('POST /api/knowledge', () => {
 
     expect(res.statusCode).toBe(200);
     expect(res.body).toMatchObject({
+      scenario: 'hard_to_fall_asleep',
       cards: expect.any(Array),
       disclaimer: expect.stringContaining('健康管理参考'),
     });
@@ -96,6 +102,7 @@ describe('POST /api/knowledge', () => {
 
     expect(res.statusCode).toBe(200);
     expect(res.body).toMatchObject({
+      scenario: 'hard_to_fall_asleep',
       cards: expect.any(Array),
       disclaimer: expect.stringContaining('健康管理参考'),
     });

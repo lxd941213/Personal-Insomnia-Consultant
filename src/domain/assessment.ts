@@ -1,4 +1,4 @@
-import type { AssessmentResult, IsiLevel, PsqiLevel } from './types';
+import type { AssessmentResult, IsiLevel, PsqiLevel, SleepProfile } from './types';
 
 // ISI = Insomnia Severity Index (7 items, each 0-4, total 0-28)
 export interface AssessmentQuestion {
@@ -87,7 +87,7 @@ export const isiQuestions: AssessmentQuestion[] = [
   },
 ];
 
-// PSQILite = Simplified Pittsburgh Sleep Quality Index (6 items, each 0-3, total 0-18)
+// PSQILite = simplified sleep quality screen (6 items, each 0-4, total 0-24)
 export const psqiLiteQuestions: AssessmentQuestion[] = [
   {
     id: 0,
@@ -97,6 +97,7 @@ export const psqiLiteQuestions: AssessmentQuestion[] = [
       { value: 1, label: '较好' },
       { value: 2, label: '较差' },
       { value: 3, label: '非常差' },
+      { value: 4, label: '极差' },
     ],
   },
   {
@@ -107,6 +108,7 @@ export const psqiLiteQuestions: AssessmentQuestion[] = [
       { value: 1, label: '6-7小时（不含）' },
       { value: 2, label: '5-6小时（不含）' },
       { value: 3, label: '<5小时' },
+      { value: 4, label: '<4小时' },
     ],
   },
   {
@@ -117,6 +119,7 @@ export const psqiLiteQuestions: AssessmentQuestion[] = [
       { value: 1, label: '75-85%（不含）' },
       { value: 2, label: '65-75%（不含）' },
       { value: 3, label: '<65%' },
+      { value: 4, label: '<50%' },
     ],
   },
   {
@@ -127,6 +130,7 @@ export const psqiLiteQuestions: AssessmentQuestion[] = [
       { value: 1, label: '<1次/周' },
       { value: 2, label: '1-2次/周' },
       { value: 3, label: '≥3次/周' },
+      { value: 4, label: '几乎每晚多次' },
     ],
   },
   {
@@ -137,6 +141,7 @@ export const psqiLiteQuestions: AssessmentQuestion[] = [
       { value: 1, label: '轻度' },
       { value: 2, label: '中度' },
       { value: 3, label: '重度' },
+      { value: 4, label: '极重度' },
     ],
   },
   {
@@ -147,70 +152,100 @@ export const psqiLiteQuestions: AssessmentQuestion[] = [
       { value: 1, label: '16-30分钟' },
       { value: 2, label: '31-60分钟' },
       { value: 3, label: '>60分钟' },
+      { value: 4, label: '>120分钟' },
     ],
   },
 ];
 
 const isiLevelLabels: Record<IsiLevel, string> = {
-  normal: '正常',
-  mild: '轻度',
-  moderate: '中度',
-  severe: '重度',
+  none: '无明显失眠',
+  mild: '轻度失眠',
+  moderate: '中度失眠',
+  severe: '重度失眠',
 };
 
 const psqiLevelLabels: Record<PsqiLevel, string> = {
-  normal: '正常',
-  mild: '轻度',
-  moderate: '中度',
-  severe: '重度',
+  good: '睡眠质量良好',
+  fair: '睡眠质量一般',
+  poor: '睡眠质量较差',
 };
 
 const isiLevelSummaries: Record<IsiLevel, string> = {
-  normal: '睡眠状态基本正常，无需特别干预',
-  mild: '存在轻微失眠症状，建议调整睡眠习惯',
-  moderate: '存在中度失眠，建议寻求专业指导',
-  severe: '存在严重失眠，需要医学干预',
+  none: '当前 ISI 自评分未显示明显失眠倾向，可继续保持稳定作息。',
+  mild: '当前 ISI 自评分提示轻度失眠倾向，建议先从作息和睡前习惯调整入手。',
+  moderate: '当前 ISI 自评分提示中度失眠倾向，建议连续观察并考虑寻求专业评估。',
+  severe: '当前 ISI 自评分提示较重失眠倾向，建议尽快寻求专业医生或睡眠门诊评估。',
 };
 
 const psqiLevelSummaries: Record<PsqiLevel, string> = {
-  normal: '睡眠质量良好',
-  mild: '睡眠质量略有下降',
-  moderate: '睡眠质量明显下降',
-  severe: '睡眠质量严重受损',
+  good: '简化睡眠质量筛查显示整体睡眠质量较好，可继续保持现有节律。',
+  fair: '简化睡眠质量筛查显示部分睡眠指标有所下降，建议注意作息规律。',
+  poor: '简化睡眠质量筛查显示睡眠质量较差，如果持续存在，建议寻求专业评估。',
 };
 
 export function getIsiLevel(score: number): IsiLevel {
-  if (score <= 7) return 'normal';
+  if (score <= 7) return 'none';
   if (score <= 14) return 'mild';
   if (score <= 21) return 'moderate';
   return 'severe';
 }
 
 export function getPsqiLiteLevel(score: number): PsqiLevel {
-  if (score <= 4) return 'normal';
-  if (score <= 7) return 'mild';
-  if (score <= 14) return 'moderate';
-  return 'severe';
+  if (score <= 5) return 'good';
+  if (score <= 11) return 'fair';
+  return 'poor';
 }
 
-export function buildAssessmentResult(
-  isiAnswers: Record<number, number>,
-  psqiAnswers: Record<number, number>
-): AssessmentResult {
+function sortedAnswers(answers: Record<number, number>): number[] {
+  return Object.keys(answers)
+    .sort((a, b) => Number(a) - Number(b))
+    .map((key) => answers[Number(key)]);
+}
+
+export function buildAssessmentResult(input: {
+  isiAnswers: Record<number, number>;
+  psqiLiteAnswers: Record<number, number>;
+  profile: SleepProfile;
+  now?: Date;
+}): AssessmentResult {
+  const { isiAnswers, psqiLiteAnswers, profile } = input;
+  const isiAnsArray = Object.keys(isiAnswers)
+    .sort((a, b) => Number(a) - Number(b))
+    .map((k) => isiAnswers[Number(k)]);
+  const psqiAnsArray = sortedAnswers(psqiLiteAnswers);
+
   const isiScore = Object.values(isiAnswers).reduce((sum, v) => sum + v, 0);
-  const psqiScore = Object.values(psqiAnswers).reduce((sum, v) => sum + v, 0);
+  const psqiScore = Object.values(psqiLiteAnswers).reduce((sum, v) => sum + v, 0);
   const isiLevel = getIsiLevel(isiScore);
   const psqiLevel = getPsqiLiteLevel(psqiScore);
 
-  // Risk flag: severe ISI or moderate-to-severe PSQI
-  const riskFlag = isiLevel === 'severe' || psqiLevel === 'moderate' || psqiLevel === 'severe';
+  const riskFlags: string[] = [];
+  if (isiLevel === 'severe') {
+    riskFlags.push('失眠严重度较高');
+  }
+  if (psqiLevel === 'poor') {
+    riskFlags.push('睡眠质量较差');
+  }
+  if ((psqiLiteAnswers[1] ?? 0) >= 3) riskFlags.push('实际睡眠时长明显不足');
+  if ((psqiLiteAnswers[4] ?? 0) >= 3) riskFlags.push('白天功能受影响较明显');
+  if ((psqiLiteAnswers[5] ?? 0) >= 3) riskFlags.push('存在助眠药物或酒精依赖风险');
+  profile.safetySignals.forEach((signal) => riskFlags.push(`存在安全信号：${signal}`));
 
   return {
-    isiScore,
-    isiLevel,
-    psqiScore,
-    psqiLevel,
-    riskFlag,
+    completedAt: (input.now ?? new Date()).toISOString(),
+    isi: {
+      answers: isiAnsArray,
+      score: isiScore,
+      level: isiLevel,
+      summary: isiLevelSummaries[isiLevel],
+    },
+    psqiLite: {
+      answers: psqiAnsArray,
+      score: psqiScore,
+      level: psqiLevel,
+      summary: psqiLevelSummaries[psqiLevel],
+    },
+    riskFlags: Array.from(new Set(riskFlags)),
   };
 }
 

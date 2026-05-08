@@ -1,4 +1,7 @@
-import type { AssessmentResult, ChatMessage, FeedbackEvent, KnowledgeResponse, SleepProfile } from '../domain/types';
+import type { AssessmentResult, ChatMessage, FeedbackEvent, KnowledgeResponse, SleepProfile, SleepScenario } from '../domain/types';
+
+export type ChatHistoryScope = 'general' | SleepScenario;
+type ScopedChatHistories = Partial<Record<ChatHistoryScope, ChatMessage[]>>;
 
 const keys = {
   profile: 'sleepProfile',
@@ -52,11 +55,28 @@ export function saveSleepProfile(profile: SleepProfile): void {
 }
 
 export function getChatHistory(): ChatMessage[] {
-  return readJson<ChatMessage[]>(keys.chatHistory, []);
+  return getScopedChatHistory('general');
 }
 
 export function saveChatHistory(messages: ChatMessage[]): void {
-  writeJson(keys.chatHistory, messages);
+  saveScopedChatHistory('general', messages);
+}
+
+function getAllChatHistories(): ScopedChatHistories {
+  const value = readJson<ChatMessage[] | ScopedChatHistories>(keys.chatHistory, {});
+  if (Array.isArray(value)) {
+    return { general: value };
+  }
+  return value;
+}
+
+export function getScopedChatHistory(scope: ChatHistoryScope): ChatMessage[] {
+  return getAllChatHistories()[scope] || [];
+}
+
+export function saveScopedChatHistory(scope: ChatHistoryScope, messages: ChatMessage[]): void {
+  const histories = getAllChatHistories();
+  writeJson(keys.chatHistory, { ...histories, [scope]: messages });
 }
 
 export function getFeedbackEvents(): FeedbackEvent[] {
@@ -67,7 +87,7 @@ export function saveFeedbackEvents(events: FeedbackEvent[]): void {
   writeJson(keys.feedbackEvents, events);
 }
 
-export type KnowledgeCache = KnowledgeResponse;
+export type KnowledgeCache = Partial<Record<SleepScenario, KnowledgeResponse>>;
 
 export function getAssessmentResult(): AssessmentResult | null {
   return readJson<AssessmentResult | null>(keys.assessmentResult, null);
@@ -77,11 +97,11 @@ export function saveAssessmentResult(result: AssessmentResult): void {
   writeJson(keys.assessmentResult, result);
 }
 
-export function getKnowledgeCache(): KnowledgeResponse | null {
-  return readJson<KnowledgeResponse | null>(keys.knowledgeCache, null);
+export function getKnowledgeCache(): KnowledgeCache {
+  return readJson<KnowledgeCache>(keys.knowledgeCache, {});
 }
 
-export function saveKnowledgeCache(cache: KnowledgeResponse): void {
+export function saveKnowledgeCache(cache: KnowledgeCache): void {
   writeJson(keys.knowledgeCache, cache);
 }
 

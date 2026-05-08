@@ -64,8 +64,15 @@ export async function processKnowledge(input: KnowledgeInput): Promise<{ status:
 
   const scenario = input.scenario as SleepScenario;
 
-  if (detectHighRiskSignal(input.profile.safetySignals.join(' ')) || input.profile.safetySignals.length > 0) {
-    return { status: 200, body: fallbackKnowledgeResponse(scenario) };
+  const hasAssessmentRisk =
+    input.assessmentResult?.isi.level === 'severe' ||
+    input.assessmentResult?.riskFlags.some((flag) => detectHighRiskSignal(flag)) === true;
+
+  if (detectHighRiskSignal(input.profile.safetySignals.join(' ')) || input.profile.safetySignals.length > 0 || hasAssessmentRisk) {
+    return {
+      status: 200,
+      body: fallbackKnowledgeResponse(scenario, '你的档案或测评结果包含需要谨慎对待的信号，建议优先寻求专业评估。'),
+    };
   }
 
   try {

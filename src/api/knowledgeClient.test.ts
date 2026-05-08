@@ -24,12 +24,17 @@ describe('generateKnowledgeCards', () => {
     const mockFetch = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({
+        scenario: 'hard_to_fall_asleep',
+        generatedAt: '2026-05-08T08:00:00.000Z',
         cards: [
           {
-            scenario: 'hard_to_fall_asleep',
             title: '睡眠限制疗法',
-            content: '通过限制卧床时间来提高睡眠效率',
-            tags: ['认知行为疗法', '失眠'],
+            summary: '通过限制卧床时间来提高睡眠效率',
+            keyPoints: ['提高睡眠效率'],
+            misconceptions: ['越早上床越好'],
+            actions: [{ title: '固定起床', detail: '先固定每天起床时间。' }],
+            safetyNote: null,
+            followUpQuestions: ['白天是否补觉？'],
           },
         ],
         disclaimer: '仅供参考',
@@ -46,6 +51,7 @@ describe('generateKnowledgeCards', () => {
       body: JSON.stringify({ profile, scenario }),
     }));
     expect(response.cards).toHaveLength(1);
+    expect(response.scenario).toBe('hard_to_fall_asleep');
     expect(response.cards[0].title).toBe('睡眠限制疗法');
   });
 

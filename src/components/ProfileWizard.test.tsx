@@ -9,23 +9,23 @@ describe('ProfileWizard', () => {
     const onComplete = vi.fn();
     render(<ProfileWizard onComplete={onComplete} />);
 
-    await user.selectOptions(screen.getByLabelText('Age range'), '25-34');
-    await user.type(screen.getByLabelText('Usual bedtime'), '01:00');
-    await user.type(screen.getByLabelText('Usual wake time'), '08:00');
-    await user.selectOptions(screen.getByLabelText('Main sleep concern'), 'hard_to_fall_asleep');
-    await user.selectOptions(screen.getByLabelText('Concern duration'), '1-3 months');
-    await user.selectOptions(screen.getByLabelText('Stress level'), 'High');
-    await user.click(screen.getByLabelText('Phone use before bed'));
-    await user.click(screen.getByLabelText('Suspected sleep apnea'));
-    await user.type(screen.getByLabelText('Daytime impact'), 'Tired at work');
-    await user.type(screen.getByLabelText('Optional context'), 'I use my phone in bed.');
-    await user.click(screen.getByRole('button', { name: 'Start consultation' }));
+    await user.selectOptions(screen.getByLabelText('年龄段'), '25-34岁');
+    await user.type(screen.getByLabelText('通常就寝时间'), '01:00');
+    await user.type(screen.getByLabelText('通常起床时间'), '08:00');
+    await user.selectOptions(screen.getByLabelText('主要睡眠问题'), 'hard_to_fall_asleep');
+    await user.selectOptions(screen.getByLabelText('问题持续时间'), '1-3个月');
+    await user.selectOptions(screen.getByLabelText('压力水平'), '很高');
+    await user.click(screen.getByRole('button', { name: '睡前玩手机' }));
+    await user.click(screen.getByRole('button', { name: '疑似睡眠呼吸暂停' }));
+    await user.type(screen.getByLabelText('白天影响'), 'Tired at work');
+    await user.type(screen.getByLabelText('补充说明（选填）'), 'I use my phone in bed.');
+    await user.click(screen.getByRole('button', { name: '开始咨询' }));
 
     expect(onComplete).toHaveBeenCalledWith(expect.objectContaining({
-      ageRange: '25-34',
+      ageRange: '25-34岁',
       mainConcern: 'hard_to_fall_asleep',
-      habits: ['Phone use before bed'],
-      safetySignals: ['Suspected sleep apnea'],
+      habits: ['睡前玩手机'],
+      safetySignals: ['疑似睡眠呼吸暂停'],
       optionalContext: 'I use my phone in bed.',
     }));
   });

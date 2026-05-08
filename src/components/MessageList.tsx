@@ -6,8 +6,7 @@ export function MessageList({ messages }: { messages: ChatMessage[] }) {
     <div className="message-list">
       {messages.map((message) => (
         <div key={message.id} className={`message ${message.role}`}>
-          <p>{message.content}</p>
-          {message.response && <AiResponseCard response={message.response} />}
+          {message.response ? <AiResponseCard response={message.response} /> : <p>{message.content}</p>}
         </div>
       ))}
     </div>

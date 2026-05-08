@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { clearAllLocalData, getAssessmentResult, getChatHistory, getFeedbackEvents, getKnowledgeCache, getSleepProfile, saveAssessmentResult, saveChatHistory, saveFeedbackEvents, saveKnowledgeCache, saveSleepProfile } from './localStore';
+import { clearAllLocalData, getAssessmentResult, getChatHistory, getFeedbackEvents, getKnowledgeCache, getScopedChatHistory, getSleepProfile, saveAssessmentResult, saveChatHistory, saveFeedbackEvents, saveKnowledgeCache, saveScopedChatHistory, saveSleepProfile } from './localStore';
 import type { SleepProfile } from '../domain/types';
 import type { AssessmentResult, KnowledgeResponse } from '../domain/types';
 
@@ -34,15 +34,20 @@ const assessmentResult: AssessmentResult = {
 };
 
 const knowledgeCache: KnowledgeResponse = {
+  scenario: 'hard_to_fall_asleep',
+  generatedAt: '2026-05-08T00:00:00.000Z',
   cards: [
     {
-      scenario: 'hard_to_fall_asleep',
-      title: 'Sleep Hygiene Tips',
-      content: 'Maintain a consistent sleep schedule.',
-      tags: ['sleep', 'hygiene'],
+      title: '睡眠卫生建议',
+      summary: '保持一致的作息节律。',
+      keyPoints: ['固定起床时间'],
+      misconceptions: ['躺得越久越容易睡着'],
+      actions: [{ title: '固定起床', detail: '连续一周在同一时间起床。' }],
+      safetyNote: null,
+      followUpQuestions: ['下午是否喝咖啡？'],
     },
   ],
-  disclaimer: 'For informational purposes only.',
+  disclaimer: '本内容仅提供健康管理参考，不作为医疗诊断。',
 };
 
 describe('localStore', () => {
@@ -61,6 +66,19 @@ describe('localStore', () => {
 
     expect(getChatHistory()).toHaveLength(1);
     expect(getFeedbackEvents()[0].value).toBe('useful');
+  });
+
+  it('keeps general and scene chat histories separate', () => {
+    const general = [{ id: 'g1', role: 'user' as const, content: '通用咨询', createdAt: '2026-05-08T00:00:00.000Z' }];
+    const scene = [{ id: 's1', role: 'user' as const, content: '入睡困难咨询', createdAt: '2026-05-08T00:01:00.000Z' }];
+
+    saveScopedChatHistory('general', general);
+    saveScopedChatHistory('hard_to_fall_asleep', scene);
+
+    expect(getScopedChatHistory('general')).toEqual(general);
+    expect(getScopedChatHistory('hard_to_fall_asleep')).toEqual(scene);
+    expect(getScopedChatHistory('stress_anxiety')).toEqual([]);
+    expect(getChatHistory()).toEqual(general);
   });
 
   it('clears all MVP data', () => {
@@ -110,15 +128,15 @@ describe('localStore', () => {
   });
 
   it('saves and reads knowledge cache', () => {
-    saveKnowledgeCache(knowledgeCache);
-    expect(getKnowledgeCache()).toEqual(knowledgeCache);
+    saveKnowledgeCache({ hard_to_fall_asleep: knowledgeCache });
+    expect(getKnowledgeCache()).toEqual({ hard_to_fall_asleep: knowledgeCache });
   });
 
   it('clears assessment result and knowledge cache with all local data', () => {
     saveAssessmentResult(assessmentResult);
-    saveKnowledgeCache(knowledgeCache);
+    saveKnowledgeCache({ hard_to_fall_asleep: knowledgeCache });
     clearAllLocalData();
     expect(getAssessmentResult()).toBeNull();
-    expect(getKnowledgeCache()).toBeNull();
+    expect(getKnowledgeCache()).toEqual({});
   });
 });
