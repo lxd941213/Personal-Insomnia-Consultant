@@ -51,6 +51,11 @@ const safetySignals = [
   )},
 ];
 
+const emotionOptions = ['焦虑', '情绪低落', '烦躁', '平稳'];
+const dietOptions = ['午后咖啡因', '夜间饮酒', '晚餐过晚', '辛辣高糖'];
+const medicationOptions = ['未用药', '偶尔使用助眠产品', '长期使用助眠药', '正在服用其他药物'];
+const medicalConditionOptions = ['无', '慢性病', '疼痛', '孕期或产后', '疑似呼吸暂停'];
+
 export function ProfileWizard({ onComplete }: ProfileWizardProps) {
   const [profile, setProfile] = useState<SleepProfile>({
     ageRange: '',
@@ -63,15 +68,27 @@ export function ProfileWizard({ onComplete }: ProfileWizardProps) {
     daytimeImpact: '',
     safetySignals: [],
     optionalContext: '',
+    gender: 'unspecified',
+    sleepDurationHours: '',
+    occupationStress: 'unspecified',
+    emotionState: [],
+    exerciseHabit: '',
+    dietHabit: [],
+    phoneUsageHabit: '',
+    medicationStatus: [],
+    medicalConditions: [],
   });
 
   function update<K extends keyof SleepProfile>(key: K, value: SleepProfile[K]) {
     setProfile((current) => ({ ...current, [key]: value }));
   }
 
-  function toggleListValue(key: 'habits' | 'safetySignals', value: string) {
+  function toggleListValue(
+    key: 'habits' | 'safetySignals' | 'emotionState' | 'dietHabit' | 'medicationStatus' | 'medicalConditions',
+    value: string,
+  ) {
     setProfile((current) => {
-      const values = current[key];
+      const values = current[key] ?? [];
       return {
         ...current,
         [key]: values.includes(value) ? values.filter((item) => item !== value) : [...values, value],
@@ -99,12 +116,29 @@ export function ProfileWizard({ onComplete }: ProfileWizardProps) {
           </select>
         </label>
         <label>
+          性别
+          <select value={profile.gender ?? 'unspecified'} onChange={(event) => update('gender', event.target.value as SleepProfile['gender'])}>
+            <option value="unspecified">暂不说明</option>
+            <option value="female">女性</option>
+            <option value="male">男性</option>
+            <option value="non_binary">非二元</option>
+            <option value="prefer_not_to_say">不愿透露</option>
+          </select>
+        </label>
+        <label>
           通常就寝时间
           <input required type="time" value={profile.bedtime} onChange={(event) => update('bedtime', event.target.value)} />
         </label>
         <label>
           通常起床时间
           <input required type="time" value={profile.wakeTime} onChange={(event) => update('wakeTime', event.target.value)} />
+        </label>
+        <label>
+          睡眠时长
+          <select value={profile.sleepDurationHours ?? ''} onChange={(event) => update('sleepDurationHours', event.target.value)}>
+            <option value="">请选择</option>
+            {['4', '5', '6', '7', '8', '9'].map((option) => <option key={option} value={option}>{option}小时左右</option>)}
+          </select>
         </label>
         <label>
           主要睡眠问题
@@ -126,6 +160,16 @@ export function ProfileWizard({ onComplete }: ProfileWizardProps) {
             {['较低', '中等', '较高', '很高'].map((option) => <option key={option}>{option}</option>)}
           </select>
         </label>
+        <label>
+          职业压力
+          <select value={profile.occupationStress ?? 'unspecified'} onChange={(event) => update('occupationStress', event.target.value as SleepProfile['occupationStress'])}>
+            <option value="unspecified">暂不说明</option>
+            <option value="low">较低</option>
+            <option value="moderate">中等</option>
+            <option value="high">较高</option>
+            <option value="very_high">很高</option>
+          </select>
+        </label>
 
         <fieldset className="chip-fieldset">
           <legend>睡眠相关习惯</legend>
@@ -143,6 +187,62 @@ export function ProfileWizard({ onComplete }: ProfileWizardProps) {
                   {item.label}
                 </button>
               );
+            })}
+          </div>
+        </fieldset>
+
+        <fieldset className="chip-fieldset">
+          <legend>情绪状态</legend>
+          <div className="chip-grid">
+            {emotionOptions.map((label) => {
+              const selected = (profile.emotionState ?? []).includes(label);
+              return <button key={label} type="button" className={`chip${selected ? ' selected' : ''}`} onClick={() => toggleListValue('emotionState', label)}>{label}</button>;
+            })}
+          </div>
+        </fieldset>
+
+        <label>
+          运动习惯
+          <select value={profile.exerciseHabit ?? ''} onChange={(event) => update('exerciseHabit', event.target.value)}>
+            <option value="">请选择</option>
+            {['几乎不运动', '每周1-2次轻运动', '每周3次以上中等运动', '经常夜间剧烈运动'].map((option) => <option key={option}>{option}</option>)}
+          </select>
+        </label>
+
+        <fieldset className="chip-fieldset">
+          <legend>饮食习惯</legend>
+          <div className="chip-grid">
+            {dietOptions.map((label) => {
+              const selected = (profile.dietHabit ?? []).includes(label);
+              return <button key={label} type="button" className={`chip${selected ? ' selected' : ''}`} onClick={() => toggleListValue('dietHabit', label)}>{label}</button>;
+            })}
+          </div>
+        </fieldset>
+
+        <label>
+          手机使用习惯
+          <select value={profile.phoneUsageHabit ?? ''} onChange={(event) => update('phoneUsageHabit', event.target.value)}>
+            <option value="">请选择</option>
+            {['睡前基本不用', '睡前偶尔使用', '睡前1小时内频繁使用', '醒来后会长时间看手机'].map((option) => <option key={option}>{option}</option>)}
+          </select>
+        </label>
+
+        <fieldset className="chip-fieldset">
+          <legend>用药情况</legend>
+          <div className="chip-grid">
+            {medicationOptions.map((label) => {
+              const selected = (profile.medicationStatus ?? []).includes(label);
+              return <button key={label} type="button" className={`chip${selected ? ' selected' : ''}`} onClick={() => toggleListValue('medicationStatus', label)}>{label}</button>;
+            })}
+          </div>
+        </fieldset>
+
+        <fieldset className="chip-fieldset">
+          <legend>基础疾病</legend>
+          <div className="chip-grid">
+            {medicalConditionOptions.map((label) => {
+              const selected = (profile.medicalConditions ?? []).includes(label);
+              return <button key={label} type="button" className={`chip${selected ? ' selected' : ''}`} onClick={() => toggleListValue('medicalConditions', label)}>{label}</button>;
             })}
           </div>
         </fieldset>
