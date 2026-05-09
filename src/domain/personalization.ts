@@ -7,7 +7,7 @@ interface BuildPersonalizationInput {
 }
 
 function determineSeverity(input: BuildPersonalizationInput): PersonalizedSleepProfile['severity'] {
-  const { profile, assessmentResult, diarySummary } = input;
+  const { profile, assessmentResult } = input;
 
   // Safety signals take precedence - severe
   const hasApneaSignal = profile.safetySignals?.some(
@@ -228,7 +228,7 @@ function buildExerciseTargets(profile: SleepProfile): string[] {
   return targets;
 }
 
-function buildSevenDayPlan(profile: SleepProfile): PersonalizedSleepProfile['sevenDayPlan'] {
+function buildSevenDayPlan(_profile: SleepProfile): PersonalizedSleepProfile['sevenDayPlan'] {
   const days = [
     {
       day: 1,
@@ -287,7 +287,7 @@ function buildSafetyBoundaries(): string[] {
 }
 
 export function buildPersonalizationProfile(input: BuildPersonalizationInput): PersonalizedSleepProfile {
-  const { profile, assessmentResult, diarySummary } = input;
+  const { profile } = input;
 
   return {
     severity: determineSeverity(input),
