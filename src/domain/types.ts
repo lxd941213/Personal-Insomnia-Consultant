@@ -20,6 +20,15 @@ export interface SleepProfile {
   daytimeImpact: string;
   safetySignals: string[];
   optionalContext: string;
+  gender?: Gender;
+  sleepDurationHours?: string;
+  occupationStress?: OccupationStress;
+  emotionState?: string[];
+  exerciseHabit?: string;
+  dietHabit?: string[];
+  phoneUsageHabit?: string;
+  medicationStatus?: string[];
+  medicalConditions?: string[];
 }
 
 export interface Suggestion {
@@ -194,4 +203,43 @@ export interface PlanRecommendation {
   reasons: string[];
   matchedSignals: string[];
   safetyNote: string | null;
+}
+
+// Personalization domain types
+export type Gender = 'female' | 'male' | 'non_binary' | 'prefer_not_to_say' | 'unspecified';
+export type OccupationStress = 'low' | 'moderate' | 'high' | 'very_high' | 'unspecified';
+export type PersonalizationSeverity = 'low' | 'mild' | 'moderate' | 'severe';
+export type CareUrgency = 'routine' | 'soon' | 'urgent';
+export type TcmPattern =
+  | 'qi_deficiency'
+  | 'yin_deficiency'
+  | 'liver_qi_stagnation'
+  | 'phlegm_dampness'
+  | 'balanced'
+  | 'unclear';
+
+export interface PersonalizedSleepProfile {
+  severity: PersonalizationSeverity;
+  careAdvice: {
+    shouldSeekCare: boolean;
+    reasons: string[];
+    urgency: CareUrgency;
+  };
+  behaviorTargets: string[];
+  relaxationTargets: string[];
+  nutritionTargets: string[];
+  exerciseTargets: string[];
+  tcmDirection: {
+    pattern: TcmPattern;
+    label: string;
+    guidance: string[];
+    disclaimer: string;
+  };
+  sevenDayPlan: Array<{
+    day: number;
+    title: string;
+    task: string;
+    checkInPrompt: string;
+  }>;
+  safetyBoundaries: string[];
 }
