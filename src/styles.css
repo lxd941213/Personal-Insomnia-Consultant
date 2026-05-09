@@ -1091,6 +1091,17 @@ button, input, textarea, select {
   background: rgba(196, 167, 110, 0.08);
 }
 
+.action-btn.small {
+  padding: 8px 16px;
+  font-size: 12px;
+}
+
+.action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
 .action-btn:last-child {
   background: linear-gradient(135deg, var(--moonbeam) 0%, #b89858 100%);
   color: var(--night-deep);
@@ -1265,6 +1276,10 @@ button, input, textarea, select {
   padding-bottom: 84px;
 }
 
+.app-shell > .page {
+  padding-bottom: calc(112px + env(safe-area-inset-bottom));
+}
+
 .bottom-tabs {
   position: fixed;
   left: 50%;
@@ -1319,9 +1334,364 @@ button, input, textarea, select {
 
 /* ─── Diary form ─── */
 
+.diary-page {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  padding-bottom: 32px;
+}
+
+.diary-page > h1 {
+  margin: 0;
+  font-family: 'Noto Serif SC', serif;
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--mist);
+  animation: fadeUp 0.6s ease-out both;
+}
+
+.diary-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  animation: fadeUp 0.6s ease-out both;
+}
+
+.diary-section h2 {
+  margin: 0;
+  font-family: 'Noto Serif SC', serif;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--moonbeam);
+  letter-spacing: 0.04em;
+}
+
 .diary-form {
   display: grid;
   gap: 14px;
+}
+
+.saved-toast {
+  margin: 0;
+  padding: 12px 16px;
+  border-radius: var(--radius-sm);
+  background: var(--safety-bg);
+  border: 1px solid var(--safety-border);
+  color: var(--moonbeam);
+  font-size: 14px;
+  text-align: center;
+  animation: fadeUp 0.4s ease-out both;
+}
+
+/* ─── My page ─── */
+
+.my-page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding-bottom: 32px;
+}
+
+.my-page > h1 {
+  margin: 0;
+  font-family: 'Noto Serif SC', serif;
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--mist);
+  animation: fadeUp 0.6s ease-out both;
+}
+
+.settings-card {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  border: 1px solid rgba(168, 180, 214, 0.12);
+  background: var(--night-surface);
+  border-radius: var(--radius-md);
+  padding: 20px;
+  animation: fadeUp 0.6s ease-out both;
+}
+
+.settings-card h2 {
+  margin: 0;
+  font-family: 'Noto Serif SC', serif;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--moonbeam);
+  letter-spacing: 0.04em;
+}
+
+.settings-card p {
+  margin: 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.7;
+}
+
+.settings-card label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.settings-card label:has(input:not([type="checkbox"])) {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--mist-dim);
+}
+
+.settings-card input[type="text"],
+.settings-card input:not([type="checkbox"]) {
+  padding: 12px 14px;
+  border: 1px solid rgba(168, 180, 214, 0.15);
+  border-radius: var(--radius-sm);
+  font-size: 15px;
+  background: var(--night-mid);
+  color: var(--text-primary);
+  transition: all 0.2s ease;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.settings-card input:focus {
+  outline: none;
+  border-color: var(--moonbeam-dim);
+  box-shadow: 0 0 0 3px var(--moonbeam-glow), 0 2px 12px rgba(0, 0, 0, 0.15);
+  background: var(--night-deep);
+}
+
+.settings-card button[type="button"] {
+  padding: 12px 24px;
+  border-radius: 40px;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  border: 1px solid rgba(168, 180, 214, 0.15);
+  background: var(--night-surface);
+  color: var(--text-primary);
+  align-self: flex-start;
+}
+
+.settings-card button[type="button"]:hover {
+  border-color: var(--moonbeam-dim);
+  color: var(--moonbeam);
+  background: rgba(196, 167, 110, 0.08);
+}
+
+.settings-card button[type="button"]:last-child {
+  background: linear-gradient(135deg, var(--moonbeam) 0%, #b89858 100%);
+  color: var(--night-deep);
+  border: none;
+  font-weight: 700;
+}
+
+.settings-card button[type="button"]:last-child:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 24px rgba(196, 167, 110, 0.3);
+}
+
+/* ─── Today page ─── */
+
+.today-page {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding-bottom: 32px;
+}
+
+.today-header {
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(168, 180, 214, 0.08);
+  animation: fadeUp 0.6s ease-out both;
+}
+
+.today-header h1 {
+  margin: 0 0 6px;
+  font-family: 'Noto Serif SC', serif;
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--mist);
+}
+
+.today-header p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.daily-card {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  border: 1px solid rgba(168, 180, 214, 0.12);
+  background: var(--night-surface);
+  border-radius: var(--radius-md);
+  padding: 20px;
+  animation: fadeUp 0.6s ease-out both;
+}
+
+.daily-card h2 {
+  margin: 0;
+  font-family: 'Noto Serif SC', serif;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--moonbeam);
+  letter-spacing: 0.04em;
+}
+
+.task-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background: var(--night-mid);
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(168, 180, 214, 0.08);
+}
+
+.task-row p {
+  margin: 0;
+  font-size: 14px;
+  color: var(--text-primary);
+}
+
+.today-action-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  animation: fadeUp 0.6s ease-out both;
+}
+
+.assessment-badge {
+  margin: 0;
+  padding: 10px 16px;
+  border-radius: var(--radius-sm);
+  background: var(--night-surface);
+  border: 1px solid rgba(168, 180, 214, 0.08);
+  color: var(--text-secondary);
+  font-size: 14px;
+  text-align: center;
+  animation: fadeUp 0.6s ease-out both;
+}
+
+/* ─── Relaxation page ─── */
+
+.relaxation-page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding-bottom: 32px;
+}
+
+.relaxation-hero {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  animation: fadeUp 0.6s ease-out both;
+}
+
+.relaxation-hero h1 {
+  margin: 0;
+  font-family: 'Noto Serif SC', serif;
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--mist);
+}
+
+.relaxation-hero p {
+  margin: 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.7;
+}
+
+.relaxation-hint {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.relaxation-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 20px;
+  background: var(--night-surface);
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(168, 180, 214, 0.08);
+  text-align: center;
+  animation: fadeUp 0.6s ease-out both;
+}
+
+.relaxation-progress p {
+  margin: 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.step-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  animation: fadeUp 0.6s ease-out both;
+}
+
+.step-item {
+  margin: 0;
+  padding: 12px 16px;
+  border-radius: var(--radius-sm);
+  background: var(--night-mid);
+  border: 1px solid rgba(168, 180, 214, 0.08);
+  color: var(--text-secondary);
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+.step-item.active {
+  background: rgba(196, 167, 110, 0.1);
+  border-color: var(--moonbeam-dim);
+  color: var(--moonbeam);
+}
+
+.relaxation-controls {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+  animation: fadeUp 0.6s ease-out both;
+}
+
+/* ─── Trends page ─── */
+
+.trends-page {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding-bottom: 32px;
+}
+
+.trends-page > h1 {
+  margin: 0;
+  font-family: 'Noto Serif SC', serif;
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--mist);
+  animation: fadeUp 0.6s ease-out both;
+}
+
+.trends-page > p {
+  margin: 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.7;
+  animation: fadeUp 0.6s ease-out both;
 }
 
 /* ─── Timer display ─── */

@@ -90,7 +90,7 @@ describe('KnowledgePage', () => {
 
     expect(screen.getByRole('heading', { name: '睡眠知识' })).toBeInTheDocument();
     expect(screen.getByText('选择场景')).toBeInTheDocument();
-    expect(screen.getAllByRole('button', { name: /查看知识/ }).length).toBe(5);
+    expect(screen.getAllByRole('button', { name: /查看知识/ }).length).toBe(9);
   });
 
   it('generates and renders Chinese knowledge cards when scenario selected', async () => {

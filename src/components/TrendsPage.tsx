@@ -19,7 +19,9 @@ export function TrendsPage({ today = new Date().toISOString().slice(0, 10), onOp
         </article>
       </section>
       {trends.insights.map((insight) => <p key={insight}>{insight}</p>)}
-      {trends.last7Days.entryCount === 0 && <button type="button" onClick={onOpenDiary}>去记录睡前状态</button>}
+      {trends.last7Days.entryCount === 0 && (
+        <button type="button" className="action-btn" onClick={onOpenDiary}>去记录睡前状态</button>
+      )}
     </main>
   );
 }

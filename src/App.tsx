@@ -155,9 +155,9 @@ export default function App() {
   }
 
   return (
-    <>
+    <div className="app-shell">
       {renderTabPage()}
       <BottomTabs active={activeTab} onChange={setActiveTab} />
-    </>
+    </div>
   );
 }

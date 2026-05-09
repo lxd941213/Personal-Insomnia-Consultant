@@ -47,18 +47,18 @@ test('user can create profile, complete assessment, generate knowledge cards, an
   await page.getByLabel('白天影响').fill('疲劳');
   await page.getByRole('button', { name: '开始咨询' }).click();
 
-  // Dashboard is shown
-  await expect(page.getByRole('heading', { name: '睡眠健康助手' })).toBeVisible();
+  // Today tab is shown
+  await expect(page.getByRole('heading', { name: '今日睡眠' })).toBeVisible();
 
   // Complete assessment and see report before returning.
-  await page.getByRole('button', { name: '睡眠评估' }).click();
+  await page.getByRole('button', { name: '睡眠自测' }).click();
   for (const group of await page.locator('[data-testid^="rating-row-"]').all()) {
     await group.locator('label').first().click();
   }
   await page.getByRole('button', { name: '生成自测报告' }).click();
   await expect(page.getByRole('heading', { name: '睡眠自测报告' })).toBeVisible();
   await page.getByRole('button', { name: '返回首页' }).click();
-  await expect(page.getByRole('heading', { name: '睡眠健康助手' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: '今日睡眠' })).toBeVisible();
 
   // Generate knowledge cards
   await page.getByRole('button', { name: '睡眠知识' }).click();
@@ -68,17 +68,18 @@ test('user can create profile, complete assessment, generate knowledge cards, an
 
   // Go back to dashboard
   await page.getByRole('button', { name: '返回' }).click();
-  await expect(page.getByRole('heading', { name: '睡眠健康助手' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: '今日睡眠' })).toBeVisible();
 
   // Chat with AI
   await page.getByRole('button', { name: /入睡困难/ }).first().click();
-  await expect(page.getByRole('heading', { name: '睡眠咨询' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: '入睡困难' })).toBeVisible();
 
   await page.getByPlaceholder('咨询入睡困难相关问题...').fill('如何改善入睡困难？');
   await page.getByRole('button', { name: '发送' }).click();
 
   await expect(page.getByText(/根据您的情况/)).toBeVisible();
   await expect(page.getByRole('button', { name: '有用' })).toBeVisible();
+  await page.getByRole('button', { name: '返回' }).click();
 
   // Sleep enhancement: diary, trend, and plan
   await page.getByRole('button', { name: '日记' }).click();
@@ -90,7 +91,7 @@ test('user can create profile, complete assessment, generate knowledge cards, an
   await page.getByLabel('入睡耗时').fill('35');
   await page.getByRole('button', { name: '保存起床记录' }).click();
   await page.getByRole('button', { name: '趋势' }).click();
-  await expect(page.getByText(/近 7 天/)).toBeVisible();
+  await expect(page.getByRole('heading', { name: '近 7 天' })).toBeVisible();
   await page.getByRole('button', { name: '方案' }).click();
   await expect(page.getByText('推荐方案')).toBeVisible();
 });

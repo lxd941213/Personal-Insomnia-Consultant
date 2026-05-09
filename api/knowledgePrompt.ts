@@ -1,19 +1,12 @@
 import type { SleepProfile, SleepScenario, AssessmentResult } from '../src/domain/types';
+import { getScenarioDefinition } from '../src/domain/scenarios';
 
 export function buildKnowledgePrompt(
   profile: SleepProfile,
   scenario: SleepScenario,
   assessmentResult?: AssessmentResult,
 ): string {
-  const scenarioDescriptions: Record<SleepScenario, string> = {
-    hard_to_fall_asleep: '入睡困难',
-    late_night_habit: '熬夜习惯',
-    stress_anxiety: '压力焦虑',
-    poor_sleep_quality: '睡眠质量差',
-    wellness_regulation: '养生调理',
-  };
-
-  const scenarioDesc = scenarioDescriptions[scenario] || '睡眠健康';
+  const scenarioDesc = getScenarioDefinition(scenario)?.label || '睡眠健康';
 
   let assessmentContext = '';
   if (assessmentResult) {
