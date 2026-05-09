@@ -85,7 +85,10 @@ describe('sleep plans', () => {
         phoneUsageHabit: '睡前1小时内频繁使用',
         dietHabit: ['午后咖啡因'],
       },
-      assessmentResult: assessment,
+      assessmentResult: {
+        ...assessment,
+        isi: { ...assessment.isi, level: 'mild' as const },
+      },
       diarySummary,
     });
 

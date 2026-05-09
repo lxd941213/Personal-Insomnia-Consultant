@@ -149,8 +149,8 @@ export function recommendSleepPlans({ profile, assessmentResult, diarySummary }:
   }
 
   const personalization = buildPersonalizationProfile({ profile, assessmentResult, diarySummary });
-  // Include seven-day plan when analysis is available and care urgency is not urgent
-  if (personalization.careAdvice.urgency !== 'urgent') {
+  // Include seven-day plan when analysis is available and care is not needed
+  if (!personalization.careAdvice.shouldSeekCare) {
     recommendations.push(makeRecommendation(
       'seven-day-personalized-plan',
       75,
