@@ -69,6 +69,7 @@ export async function processChat(input: ChatInput): Promise<{ status: number; b
   const personalization = buildPersonalizationProfile({
     profile: input.profile,
     assessmentResult: input.assessmentResult ?? null,
+    diarySummary: undefined,
   });
 
   if (personalization.careAdvice.shouldSeekCare) {
