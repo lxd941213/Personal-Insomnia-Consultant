@@ -1,5 +1,6 @@
 import { normalizeAiResponse, safeFallbackResponse } from '../src/domain/aiResponse';
 import { detectHighRiskSignal } from '../src/domain/safety';
+import { buildPersonalizationProfile } from '../src/domain/personalization';
 import type { AssessmentResult, ChatMessage, SleepProfile, SleepScenario } from '../src/domain/types';
 import { buildSleepAdvisorPrompt } from './prompt';
 import { callAiProvider } from './provider';
@@ -65,12 +66,21 @@ export async function processChat(input: ChatInput): Promise<{ status: number; b
     return { status: 400, body: { error: 'Message too long' } };
   }
 
+  const personalization = buildPersonalizationProfile({
+    profile: input.profile,
+    assessmentResult: input.assessmentResult ?? null,
+  });
+
+  if (personalization.careAdvice.shouldSeekCare) {
+    return { status: 200, body: safeFallbackResponse() };
+  }
+
   if (detectHighRiskSignal(input.message) || input.profile.safetySignals.length > 0) {
     return { status: 200, body: safeFallbackResponse() };
   }
 
   try {
-    const prompt = buildSleepAdvisorPrompt(input.profile, input.message, input.history || [], input.assessmentResult, input.scenario);
+    const prompt = buildSleepAdvisorPrompt(input.profile, input.message, input.history || [], input.assessmentResult, input.scenario, personalization);
     const providerResult = await callAiProvider(prompt);
     const parsed = parseProviderJson(providerResult.content);
     return { status: 200, body: normalizeAiResponse(parsed) };

@@ -143,26 +143,49 @@ describe('chat api', () => {
     });
   });
 
+  it('uses deterministic personalization safety before calling provider', async () => {
+    vi.mocked(callAiProvider).mockClear();
+    const res = mockRes();
+
+    await handler({
+      method: 'POST',
+      body: {
+        profile: {
+          ...profile,
+          concernDuration: '3个月以上',
+          daytimeImpact: '白天明显疲惫，工作受影响',
+          medicationStatus: ['长期使用助眠药'],
+        },
+        message: '我还能怎么改善睡眠？',
+        history: [],
+      },
+    } as never, res as never);
+
+    expect(callAiProvider).not.toHaveBeenCalled();
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toMatchObject({ riskLevel: 'high_risk' });
+  });
+
   it('includes assessment context in prompt when provided', async () => {
     const assessmentResult: AssessmentResult = {
       completedAt: '2024-01-15T10:00:00Z',
       isi: {
-        answers: [3, 2, 2, 1, 2, 3, 2],
-        score: 15,
-        level: 'moderate',
-        summary: '中度失眠',
+        answers: [2, 1, 1, 1, 1, 1, 1],
+        score: 8,
+        level: 'mild',
+        summary: '轻度失眠',
       },
       psqiLite: {
-        answers: [2, 1, 2, 1, 2],
-        score: 8,
-        level: 'poor',
-        summary: '睡眠质量较差',
+        answers: [1, 1, 1, 1, 1],
+        score: 5,
+        level: 'fair',
+        summary: '睡眠质量尚可',
       },
-      riskFlags: ['入睡困难', '白天功能影响'],
+      riskFlags: ['入睡困难'],
     };
 
     let capturedPrompt = '';
-    vi.mocked(callAiProvider).mockImplementation(async (prompt: string) => {
+    const mockImpl = async (prompt: string) => {
       capturedPrompt = prompt;
       return {
         content: JSON.stringify({
@@ -175,7 +198,8 @@ describe('chat api', () => {
           disclaimer: 'Test',
         }),
       };
-    });
+    };
+    vi.mocked(callAiProvider).mockImplementation(mockImpl);
 
     const res = mockRes();
     await handler({
@@ -185,7 +209,7 @@ describe('chat api', () => {
 
     expect(res.statusCode).toBe(200);
     expect(capturedPrompt).toContain('最近一次睡眠自测');
-    expect(capturedPrompt).toContain('ISI：15 分');
+    expect(capturedPrompt).toContain('ISI：8 分');
   });
 
   it('includes hidden scene context in prompt when provided', async () => {
