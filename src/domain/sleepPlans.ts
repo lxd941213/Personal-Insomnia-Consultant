@@ -1,4 +1,5 @@
 import type { AssessmentResult, DiarySummary, PlanRecommendation, SleepPlan, SleepProfile } from './types';
+import { buildPersonalizationProfile } from './personalization';
 
 export const sleepPlans: SleepPlan[] = [
   {
@@ -55,6 +56,15 @@ export const sleepPlans: SleepPlan[] = [
     tags: ['中医调理方向', '睡眠卫生'],
     safetyNote: '调理建议仅作健康管理参考，不替代诊疗。',
   },
+  {
+    id: 'seven-day-personalized-plan',
+    category: 'schedule',
+    title: '7天改善计划',
+    summary: '把画像分析转化为一周内可执行的每日打卡任务。',
+    steps: ['固定起床时间', '建立睡前边界', '记录睡眠窗口', '刺激控制练习', '饮食边界', '温和运动', '复盘调整'],
+    tags: ['7天计划', '个性化'],
+    safetyNote: '如存在严重症状或安全信号，应优先专业评估。',
+  },
 ];
 
 interface RecommendInput {
@@ -74,14 +84,19 @@ function makeRecommendation(
 }
 
 export function recommendSleepPlans({ profile, assessmentResult, diarySummary }: RecommendInput): PlanRecommendation[] {
-  if (profile.safetySignals.length > 0 || (assessmentResult?.riskFlags.length ?? 0) > 0) {
+  const assessmentSafetySignals = (assessmentResult?.riskFlags ?? []).filter((flag) =>
+    flag.includes('安全信号') || flag.includes('呼吸暂停') || flag.includes('药物') || flag.includes('酒精依赖'),
+  );
+  const safetySignals = [...profile.safetySignals, ...assessmentSafetySignals];
+
+  if (safetySignals.length > 0) {
     return [
       makeRecommendation(
         'medical-evaluation',
         100,
         ['当前存在需要优先关注的安全信号，建议先排除需要医疗处理的因素。'],
-        [...profile.safetySignals, ...(assessmentResult?.riskFlags ?? [])],
-        `安全信号：${[...profile.safetySignals, ...(assessmentResult?.riskFlags ?? [])].join('、')}`,
+        safetySignals,
+        `安全信号：${safetySignals.join('、')}`,
       ),
     ];
   }
@@ -130,6 +145,18 @@ export function recommendSleepPlans({ profile, assessmentResult, diarySummary }:
       ['睡眠质量偏低时，稳定、低刺激的睡前流程有助于减少波动。'],
       ['睡眠质量偏低'],
       '调理建议仅作健康管理参考，不替代诊疗。',
+    ));
+  }
+
+  const personalization = buildPersonalizationProfile({ profile, assessmentResult, diarySummary });
+  // Include seven-day plan when analysis is available and care urgency is not urgent
+  if (personalization.careAdvice.urgency !== 'urgent') {
+    recommendations.push(makeRecommendation(
+      'seven-day-personalized-plan',
+      75,
+      ['根据画像、评估和睡眠记录生成一周内可执行的每日任务。'],
+      personalization.sevenDayPlan.map((item) => `第${item.day}天：${item.title}`),
+      personalization.safetyBoundaries.join('；'),
     ));
   }
 

@@ -59,4 +59,36 @@ describe('sleep plans', () => {
     expect(recommendations[0].planId).toBe('medical-evaluation');
     expect(recommendations[0].safetyNote).toContain('疑似睡眠呼吸暂停');
   });
+
+  it('does not replace behavior plans with medical evaluation for ordinary assessment risk flags', () => {
+    const recommendations = recommendSleepPlans({
+      profile,
+      assessmentResult: {
+        ...assessment,
+        riskFlags: ['睡眠质量较差', '实际睡眠时长明显不足'],
+      },
+      diarySummary,
+    });
+
+    expect(recommendations[0].planId).toBe('fixed-wake-time');
+    expect(recommendations.map((item) => item.planId)).toEqual(expect.arrayContaining([
+      'stimulus-control',
+      'wellness-routine',
+    ]));
+    expect(recommendations.map((item) => item.planId)).not.toContain('medical-evaluation');
+  });
+
+  it('includes a seven-day personalization plan when deterministic analysis is available', () => {
+    const recommendations = recommendSleepPlans({
+      profile: {
+        ...profile,
+        phoneUsageHabit: '睡前1小时内频繁使用',
+        dietHabit: ['午后咖啡因'],
+      },
+      assessmentResult: assessment,
+      diarySummary,
+    });
+
+    expect(recommendations.map((item) => item.planId)).toContain('seven-day-personalized-plan');
+  });
 });
