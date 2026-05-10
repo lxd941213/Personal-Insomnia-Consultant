@@ -243,3 +243,70 @@ export interface PersonalizedSleepProfile {
   }>;
   safetyBoundaries: string[];
 }
+
+// Program domain types
+export type ProgramStatus = 'active' | 'completed' | 'paused' | 'needs_care';
+export type TaskStatus = 'locked' | 'today' | 'completed' | 'skipped';
+export type ProgramTemplateId = 'cbti_foundation_14_day';
+export type ProgramTaskCategory = 'cbti' | 'sleep_hygiene' | 'relaxation' | 'schedule' | 'nutrition' | 'wellness';
+export type EvidenceLabel = 'CBT-I' | '睡眠卫生' | '放松训练' | '饮食作息' | '养生参考';
+
+export interface SleepProgram extends SyncRecord {
+  startedAt: string;
+  currentDay: number;
+  status: ProgramStatus;
+  templateId: ProgramTemplateId;
+}
+
+export interface ProgramTask {
+  day: number;
+  title: string;
+  category: ProgramTaskCategory;
+  evidenceLabel: EvidenceLabel;
+  estimatedMinutes: number;
+  rationale: string;
+  action: string;
+  fallbackAction: string;
+  safetyNote: string | null;
+}
+
+export interface DailyTaskLog extends SyncRecord {
+  programId: string;
+  day: number;
+  date: string;
+  status: 'completed' | 'skipped';
+  difficulty: 'easy' | 'ok' | 'hard' | null;
+  sleepQuality: number | null;
+  sleepLatencyMinutes: number | null;
+  awakenings: number | null;
+  daytimeEnergy: string;
+  note: string;
+}
+
+export interface ProgramStats {
+  completedCount: number;
+  skippedCount: number;
+  completionRate: number;
+  currentStreak: number;
+  needsFallback: boolean;
+}
+
+export interface ProgramReview {
+  title: string;
+  summary: string;
+  nextStep: string;
+}
+
+export interface ResolvedProgramState {
+  program: SleepProgram;
+  tasks: Array<ProgramTask & { status: TaskStatus }>;
+  stats: ProgramStats;
+  safetyReasons: string[];
+}
+
+export interface ProgramPromptContext {
+  currentDay: number;
+  todayTask: ProgramTask;
+  stats: ProgramStats;
+  safetyStatus: ProgramStatus;
+}
