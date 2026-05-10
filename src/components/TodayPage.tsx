@@ -1,13 +1,26 @@
 import { useState, useEffect } from 'react';
-import type { AssessmentResult, SleepProfile, SleepScenario } from '../domain/types';
+import type { AssessmentResult, DailyTaskLog, SleepProfile, SleepScenario } from '../domain/types';
+import {
+  buildProgramStats,
+  createSleepProgram,
+  resolveProgramState,
+  resolveTodayProgramTask,
+} from '../domain/program';
+import {
+  getDailyTaskLogs,
+  getReminderSettings,
+  getSleepProgram,
+  saveDailyTaskLogs,
+  saveReminderSettings,
+  saveSleepProgram,
+} from '../storage/localStore';
 import { buildDefaultReminderSettings, buildTodayReminderTasks } from '../domain/reminders';
-import { getReminderSettings, saveReminderSettings } from '../storage/localStore';
 import { ScenarioLauncher } from './ScenarioLauncher';
 
 interface TodayPageProps {
   profile: SleepProfile;
   assessmentResult: AssessmentResult | null;
-  onOpenChat: (scenario?: SleepScenario) => void;
+  onOpenChat: (scenario?: SleepScenario, initialInput?: string) => void;
   onOpenAssessment: () => void;
   onOpenKnowledge: (scenario?: SleepScenario) => void;
   onOpenRelaxation: (toolId: string) => void;
@@ -36,11 +49,77 @@ export function TodayPage({
   const [settings, setSettings] = useState(() => getReminderSettings() ?? buildDefaultReminderSettings());
   const tasks = buildTodayReminderTasks(settings, today);
 
+  const [program, setProgram] = useState(() => {
+    const existing = getSleepProgram();
+    if (existing) return existing;
+    const created = createSleepProgram({ profile, assessmentResult, diarySummary: undefined });
+    saveSleepProgram(created);
+    return created;
+  });
+  const [taskLogs, setTaskLogs] = useState<DailyTaskLog[]>(() => getDailyTaskLogs());
+  const [pendingTaskStatus, setPendingTaskStatus] = useState<'completed' | 'skipped' | null>(null);
+  const [difficulty, setDifficulty] = useState<'easy' | 'ok' | 'hard' | null>('ok');
+  const [sleepQuality, setSleepQuality] = useState<number | null>(null);
+  const [sleepLatencyMinutes, setSleepLatencyMinutes] = useState('');
+  const [awakenings, setAwakenings] = useState('');
+  const [daytimeEnergy, setDaytimeEnergy] = useState('一般');
+  const [note, setNote] = useState('');
+
+  const programState = resolveProgramState({
+    program,
+    profile,
+    assessmentResult,
+    diarySummary: undefined,
+    logs: taskLogs,
+    today,
+  });
+  const todayTask = resolveTodayProgramTask(programState);
+  const programStats = buildProgramStats(taskLogs);
+
   useEffect(() => {
     if (typeof window !== 'undefined' && (window as any).lucide) {
       (window as any).lucide.createIcons();
     }
   }, []);
+
+  function saveTaskLog() {
+    if (!pendingTaskStatus) return;
+    const iso = new Date().toISOString();
+    const log: DailyTaskLog = {
+      id: `task-${todayTask.task.day}-${today}`,
+      programId: program.id,
+      day: todayTask.task.day,
+      date: today,
+      status: pendingTaskStatus,
+      difficulty,
+      sleepQuality,
+      sleepLatencyMinutes: sleepLatencyMinutes ? Number(sleepLatencyMinutes) : null,
+      awakenings: awakenings ? Number(awakenings) : null,
+      daytimeEnergy,
+      note,
+      createdAt: iso,
+      updatedAt: iso,
+      version: 1,
+    };
+    const nextLogs = [
+      ...taskLogs.filter((entry) => !(entry.programId === program.id && entry.day === log.day && entry.date === log.date)),
+      log,
+    ];
+    setTaskLogs(nextLogs);
+    saveDailyTaskLogs(nextLogs);
+
+    const nextProgram = resolveProgramState({
+      program,
+      profile,
+      assessmentResult,
+      diarySummary: undefined,
+      logs: nextLogs,
+      today,
+    }).program;
+    setProgram(nextProgram);
+    saveSleepProgram({ ...nextProgram, updatedAt: iso, version: nextProgram.version + 1 });
+    setPendingTaskStatus(null);
+  }
 
   function acknowledgeReminder(type: 'bedtime' | 'wake') {
     const nextSettings = {
@@ -81,6 +160,113 @@ export function TodayPage({
           </div>
         )}
       </header>
+
+      {/* Daily program card */}
+      <section className="program-card">
+        <div className="section-header">
+          <h2>14 天改善计划</h2>
+          <span className="section-count">
+            第 {programState.program.currentDay} 天 / 14 天
+          </span>
+        </div>
+
+        {programState.program.status === 'needs_care' ? (
+          <article className="program-task-card high-risk">
+            <span className="evidence-label">安全优先</span>
+            <h3>优先进行专业评估</h3>
+            <p>你当前的档案包含需要优先排查的安全信号。建议先记录症状、准备问题，并咨询医生或睡眠门诊。</p>
+            {programState.safetyReasons.length > 0 && (
+              <p className="fine-print">原因：{programState.safetyReasons.join('；')}</p>
+            )}
+          </article>
+        ) : (
+          <article className="program-task-card">
+            <div className="program-task-meta">
+              <span className="evidence-label">{todayTask.task.evidenceLabel}</span>
+              <span>{todayTask.task.estimatedMinutes} 分钟</span>
+            </div>
+            <h3>{todayTask.task.title}</h3>
+            <p>{todayTask.task.rationale}</p>
+            <p><strong>今日动作：</strong>{todayTask.task.action}</p>
+            {programStats.needsFallback && (
+              <p><strong>更轻量做法：</strong>{todayTask.task.fallbackAction}</p>
+            )}
+            {todayTask.task.safetyNote && <p className="fine-print">{todayTask.task.safetyNote}</p>}
+            <div className="program-actions">
+              <button type="button" className="primary-button" onClick={() => setPendingTaskStatus('completed')}>
+                完成今日任务
+              </button>
+              <button type="button" className="action-btn" onClick={() => setPendingTaskStatus('skipped')}>
+                今天跳过
+              </button>
+              <button
+                type="button"
+                className="action-btn"
+                onClick={() => onOpenChat(
+                  undefined,
+                  `请解释今天的睡眠改善任务：${todayTask.task.title}，并告诉我如果做不到应该怎么简化。`,
+                )}
+              >
+                问 AI
+              </button>
+            </div>
+          </article>
+        )}
+
+        {pendingTaskStatus && (
+          <div className="program-feedback">
+            <h3>保存反馈</h3>
+            <div className="segmented-row" aria-label="任务难度">
+              {[
+                ['easy', '轻松'],
+                ['ok', '可以'],
+                ['hard', '偏难'],
+              ].map(([value, label]) => (
+                <button
+                  key={value}
+                  type="button"
+                  className={difficulty === value ? 'selected' : ''}
+                  onClick={() => setDifficulty(value as 'easy' | 'ok' | 'hard')}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            <div className="quality-row">
+              {[5, 6, 7, 8].map((value) => (
+                <button
+                  key={value}
+                  type="button"
+                  aria-label={`睡眠质量 ${value} 分`}
+                  className={sleepQuality === value ? 'selected' : ''}
+                  onClick={() => setSleepQuality(value)}
+                >
+                  {value}
+                </button>
+              ))}
+            </div>
+            <label>
+              入睡耗时
+              <input value={sleepLatencyMinutes} onChange={(event) => setSleepLatencyMinutes(event.target.value)} inputMode="numeric" />
+            </label>
+            <label>
+              夜醒次数
+              <input value={awakenings} onChange={(event) => setAwakenings(event.target.value)} inputMode="numeric" />
+            </label>
+            <label>
+              白天精神
+              <input value={daytimeEnergy} onChange={(event) => setDaytimeEnergy(event.target.value)} />
+            </label>
+            <label>
+              备注
+              <textarea value={note} onChange={(event) => setNote(event.target.value)} />
+            </label>
+            <button type="button" className="primary-button" onClick={saveTaskLog}>
+              保存反馈
+            </button>
+          </div>
+        )}
+      </section>
 
       {/* Horizontal scenario launcher */}
       <section>

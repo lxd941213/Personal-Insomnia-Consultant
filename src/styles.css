@@ -2795,6 +2795,60 @@ button, input, textarea, select {
   color: var(--mist);
 }
 
+/* ─── Program card styles ─── */
+.program-card,
+.program-task-card,
+.program-feedback {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.program-task-card {
+  padding: 16px;
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-md);
+  background: var(--card-bg);
+}
+
+.program-task-card.high-risk {
+  border-color: var(--high-risk-border);
+  background: var(--high-risk-bg);
+}
+
+.program-task-meta,
+.program-actions,
+.segmented-row,
+.quality-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.evidence-label {
+  width: fit-content;
+  padding: 4px 8px;
+  border: 1px solid rgba(196, 167, 110, 0.4);
+  border-radius: var(--radius-sm);
+  color: var(--moonbeam);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.program-feedback {
+  padding: 14px;
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.segmented-row button.selected,
+.quality-row button.selected {
+  border-color: var(--moonbeam);
+  color: var(--moonbeam);
+}
+
 /* ─── Refined responsive ─── */
 
 @media (max-width: 640px) {
