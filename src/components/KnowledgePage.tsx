@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { AssessmentResult, KnowledgeResponse, SleepProfile, SleepScenario } from '../domain/types';
 import { generateKnowledgeCards } from '../api/knowledgeClient';
+import { buildTrustedKnowledgeResponse } from '../domain/trustedContent';
 import { getKnowledgeCache, saveKnowledgeCache } from '../storage/localStore';
 import { getScenarioDefinition } from '../domain/scenarios';
 import { ScenarioLauncher } from './ScenarioLauncher';
@@ -59,29 +60,17 @@ export function KnowledgePage({
 
   useEffect(() => {
     if (!initialScenario) return;
-
-    const cached = getKnowledgeCache() || {};
-    if (cached[initialScenario]) {
-      setResponse(cached[initialScenario] ?? null);
-      setFromCache(true);
-      setLoadingState('success');
-    } else {
-      doGenerate(initialScenario);
-    }
-  }, [initialScenario, doGenerate]);
+    setResponse(buildTrustedKnowledgeResponse(initialScenario));
+    setFromCache(false);
+    setLoadingState('success');
+  }, [initialScenario]);
 
   const handleScenarioSelect = (scenario: SleepScenario) => {
     setSelectedScenario(scenario);
-    const cached = getKnowledgeCache() || {};
-    if (cached[scenario]) {
-      setResponse(cached[scenario] ?? null);
-      setFromCache(true);
-      setLoadingState('success');
-      return;
-    }
-    setResponse(null);
+    setResponse(buildTrustedKnowledgeResponse(scenario));
     setFromCache(false);
-    doGenerate(scenario);
+    setError('');
+    setLoadingState('success');
   };
 
   const handleRegenerate = () => {
@@ -228,7 +217,7 @@ export function KnowledgePage({
                   className="primary-button"
                   onClick={handleRegenerate}
                 >
-                  重新生成
+                  生成 AI 补充参考
                 </button>
               </div>
 

@@ -93,7 +93,7 @@ describe('KnowledgePage', () => {
     expect(screen.getAllByRole('button', { name: /查看知识/ }).length).toBe(9);
   });
 
-  it('generates and renders Chinese knowledge cards when scenario selected', async () => {
+  it('renders trusted knowledge cards without calling AI when scenario selected', async () => {
     const user = userEvent.setup();
 
     render(
@@ -107,16 +107,11 @@ describe('KnowledgePage', () => {
 
     await user.click(screen.getByRole('button', { name: /入睡困难/ }));
 
-    // Wait for cards to appear
-    await waitFor(() => {
-      expect(screen.getByText('入睡困难调理')).toBeInTheDocument();
-    });
-
-    expect(screen.getByText('睡前放松技巧')).toBeInTheDocument();
-    expect(screen.getByText(/本内容仅供健康管理参考/)).toBeInTheDocument();
+    expect(screen.getByText('固定起床时间是优先动作')).toBeInTheDocument();
+    expect(screen.getByText('刺激控制减少床上的清醒焦虑')).toBeInTheDocument();
   });
 
-  it('auto-generates when initialScenario is provided', async () => {
+  it('renders trusted cards when initialScenario is provided', async () => {
     render(
       <KnowledgePage
         profile={mockProfile}
@@ -126,13 +121,30 @@ describe('KnowledgePage', () => {
       />,
     );
 
-    // Wait for cards to appear
+    expect(screen.getByText('固定起床时间是优先动作')).toBeInTheDocument();
+  });
+
+  it('saves AI supplemental cards when generated from trusted view', async () => {
+    const user = userEvent.setup();
+
+    render(
+      <KnowledgePage
+        profile={mockProfile}
+        assessmentResult={mockAssessmentResult}
+        initialScenario="hard_to_fall_asleep"
+        onBack={vi.fn()}
+      />,
+    );
+
+    await user.click(screen.getByRole('button', { name: '生成 AI 补充参考' }));
+
     await waitFor(() => {
       expect(screen.getByText('入睡困难调理')).toBeInTheDocument();
     });
+    expect(mockLocalStore.saveKnowledgeCache).toHaveBeenCalled();
   });
 
-  it('uses cached cards on mount', async () => {
+  it('shows trusted cards when initialScenario is provided', async () => {
     const cache = {
       hard_to_fall_asleep: {
         scenario: 'hard_to_fall_asleep',
@@ -163,10 +175,10 @@ describe('KnowledgePage', () => {
       />,
     );
 
+    // Trusted content takes precedence over cache
     await waitFor(() => {
-      expect(screen.getByText('缓存的知识卡片')).toBeInTheDocument();
+      expect(screen.getByText('固定起床时间是优先动作')).toBeInTheDocument();
     });
-    expect(screen.getByText('上次生成')).toBeInTheDocument();
   });
 
   it('supports regeneration of knowledge cards', async () => {
@@ -183,11 +195,11 @@ describe('KnowledgePage', () => {
 
     // Wait for initial load to complete
     await waitFor(() => {
-      expect(screen.getByText('入睡困难调理')).toBeInTheDocument();
+      expect(screen.getByText('固定起床时间是优先动作')).toBeInTheDocument();
     });
 
     // Click regenerate button
-    await user.click(screen.getByRole('button', { name: '重新生成' }));
+    await user.click(screen.getByRole('button', { name: '生成 AI 补充参考' }));
 
     // Wait for cards to appear again (proves regeneration happened)
     await waitFor(() => {
