@@ -3,7 +3,6 @@ import { sleepPlans, recommendSleepPlans } from '../domain/sleepPlans';
 import { summarizeRecentDiary } from '../domain/sleepDiary';
 import { createSleepProgram, resolveProgramState } from '../domain/program';
 import { getDailyTaskLogs, getDiaryEntries, getSleepProgram, saveSleepProgram } from '../storage/localStore';
-import { buildPersonalizationProfile } from '../domain/personalization';
 import type { AssessmentResult, SleepPlan, SleepPlanCategory } from '../domain/types';
 import type { SleepProfile } from '../domain/types';
 
@@ -33,7 +32,6 @@ function groupPlansByCategory(plans: SleepPlan[]) {
 export function PlansPage({ profile, assessmentResult }: { profile: SleepProfile; assessmentResult: AssessmentResult | null }) {
   const diarySummary = summarizeRecentDiary(getDiaryEntries());
   const recommendations = recommendSleepPlans({ profile, assessmentResult, diarySummary });
-  const personalization = buildPersonalizationProfile({ profile, assessmentResult, diarySummary });
   const [expandedCategories, setExpandedCategories] = useState<Set<SleepPlanCategory>>(new Set());
   const [expandedPlans, setExpandedPlans] = useState<Set<string>>(new Set());
 
