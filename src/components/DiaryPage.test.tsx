@@ -21,6 +21,9 @@ describe('DiaryPage', () => {
     await user.type(screen.getByLabelText('睡前备注'), '今晚工作较晚');
     await user.click(screen.getByRole('button', { name: '保存睡前记录' }));
 
+    // Switch to wake tab
+    await user.click(screen.getByRole('button', { name: /起床记录/ }));
+
     await user.type(screen.getByLabelText('入睡时间'), '23:40');
     await user.type(screen.getByLabelText('起床时间'), '07:10');
     await user.type(screen.getByLabelText('入睡耗时'), '35');

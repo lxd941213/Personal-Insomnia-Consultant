@@ -72,7 +72,7 @@ export async function processChat(input: ChatInput): Promise<{ status: number; b
     diarySummary: undefined,
   });
 
-  if (personalization.careAdvice.shouldSeekCare) {
+  if (personalization.careAdvice.shouldSeekCare && personalization.careAdvice.urgency === 'urgent') {
     return { status: 200, body: safeFallbackResponse() };
   }
 

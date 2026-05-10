@@ -77,6 +77,68 @@ describe('buildPersonalizationProfile', () => {
     expect(result.careAdvice.urgency).toBe('soon');
   });
 
+  it('uses PSQI impairment, short sleep, medication, pregnancy, and major disease as safety evidence', () => {
+    const cases: Array<{
+      name: string;
+      profile: SleepProfile;
+      assessmentResult: AssessmentResult | null;
+      diarySummary?: DiarySummary;
+      expectedReason: string;
+      expectedSeverity: 'moderate' | 'severe';
+    }> = [
+      {
+        name: 'poor sleep quality with daytime impairment',
+        profile: { ...baseProfile, daytimeImpact: '白天功能明显受影响' },
+        assessmentResult: assessment('none', 'poor'),
+        expectedReason: '睡眠质量较差且影响白天功能',
+        expectedSeverity: 'severe',
+      },
+      {
+        name: 'persistent short sleep with daytime impairment',
+        profile: { ...baseProfile, sleepDurationHours: '4', daytimeImpact: '白天明显疲惫' },
+        assessmentResult: null,
+        diarySummary: { ...diarySummary, averageSleepDurationMinutes: 260 },
+        expectedReason: '睡眠时长明显不足且伴随白天影响',
+        expectedSeverity: 'moderate',
+      },
+      {
+        name: 'nightly sedative use',
+        profile: { ...baseProfile, medicationStatus: ['长期使用助眠药'] },
+        assessmentResult: null,
+        expectedReason: '存在助眠药物依赖或长期用药信号',
+        expectedSeverity: 'severe',
+      },
+      {
+        name: 'pregnancy or postpartum',
+        profile: { ...baseProfile, medicalConditions: ['孕期或产后'] },
+        assessmentResult: null,
+        expectedReason: '孕期或产后睡眠问题需要谨慎评估',
+        expectedSeverity: 'severe',
+      },
+      {
+        name: 'major disease or chest pain',
+        profile: { ...baseProfile, medicalConditions: ['慢性病'], optionalContext: '最近伴随胸痛' },
+        assessmentResult: null,
+        expectedReason: '存在基础疾病或胸痛相关信号',
+        expectedSeverity: 'severe',
+      },
+      {
+        name: 'generic safety signal',
+        profile: { ...baseProfile, safetySignals: ['严重症状'] },
+        assessmentResult: null,
+        expectedReason: '存在安全信号：严重症状',
+        expectedSeverity: 'severe',
+      },
+    ];
+
+    cases.forEach(({ profile, assessmentResult, diarySummary, expectedReason, expectedSeverity }) => {
+      const result = buildPersonalizationProfile({ profile, assessmentResult, diarySummary });
+      expect(result.severity).toBe(expectedSeverity);
+      expect(result.careAdvice.shouldSeekCare).toBe(true);
+      expect(result.careAdvice.reasons).toContain(expectedReason);
+    });
+  });
+
   it('keeps supplement guidance non-dosing and safety oriented', () => {
     const result = buildPersonalizationProfile({
       profile: {

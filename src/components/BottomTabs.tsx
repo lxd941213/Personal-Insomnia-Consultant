@@ -1,11 +1,13 @@
+import { useEffect } from 'react';
+
 export type MainTab = 'today' | 'diary' | 'trends' | 'plans' | 'my';
 
-const tabs: Array<{ value: MainTab; label: string }> = [
-  { value: 'today', label: '今日' },
-  { value: 'diary', label: '日记' },
-  { value: 'trends', label: '趋势' },
-  { value: 'plans', label: '方案' },
-  { value: 'my', label: '我的' },
+const tabs: Array<{ value: MainTab; label: string; icon: string }> = [
+  { value: 'today', label: '今日', icon: 'sun' },
+  { value: 'diary', label: '日记', icon: 'book-open' },
+  { value: 'trends', label: '趋势', icon: 'trending-up' },
+  { value: 'plans', label: '方案', icon: 'moon' },
+  { value: 'my', label: '我的', icon: 'user' },
 ];
 
 export function BottomTabs({
@@ -15,6 +17,12 @@ export function BottomTabs({
   active: MainTab;
   onChange: (tab: MainTab) => void;
 }) {
+  useEffect(() => {
+    if (typeof window !== 'undefined' && (window as any).lucide) {
+      (window as any).lucide.createIcons();
+    }
+  }, [active]);
+
   return (
     <nav className="bottom-tabs" aria-label="主导航">
       {tabs.map((tab) => (
@@ -23,8 +31,12 @@ export function BottomTabs({
           type="button"
           className={active === tab.value ? 'bottom-tab active' : 'bottom-tab'}
           onClick={() => onChange(tab.value)}
+          aria-current={active === tab.value ? 'page' : undefined}
         >
-          {tab.label}
+          <span className="tab-icon" aria-hidden="true">
+            <i data-lucide={tab.icon} style={{ width: '20px', height: '20px' }}></i>
+          </span>
+          <span>{tab.label}</span>
         </button>
       ))}
     </nav>

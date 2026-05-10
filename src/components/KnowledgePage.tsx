@@ -27,6 +27,7 @@ export function KnowledgePage({
   const [response, setResponse] = useState<KnowledgeResponse | null>(null);
   const [fromCache, setFromCache] = useState(false);
   const [error, setError] = useState('');
+  const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
 
   const doGenerate = useCallback(
     async (scenario: SleepScenario, retryCount = 0) => {
@@ -89,8 +90,17 @@ export function KnowledgePage({
     }
   };
 
+  function toggleCard(title: string) {
+    setExpandedCards((prev) => {
+      const next = new Set(prev);
+      if (next.has(title)) next.delete(title);
+      else next.add(title);
+      return next;
+    });
+  }
+
   return (
-    <main className="page knowledge-page">
+    <main className="page knowledge-page page-enter">
       <header className="knowledge-header">
         <button type="button" className="back-btn" onClick={onBack}>
           返回
@@ -101,7 +111,7 @@ export function KnowledgePage({
       {!selectedScenario && (
         <section className="knowledge-section">
           <h2>选择场景</h2>
-          <ScenarioLauncher mode="knowledge" onSelect={handleScenarioSelect} />
+          <ScenarioLauncher mode="knowledge" onSelect={handleScenarioSelect} variant="horizontal" />
         </section>
       )}
 
@@ -125,23 +135,91 @@ export function KnowledgePage({
             <>
               {fromCache && <p className="cache-note">上次生成</p>}
               <div className="knowledge-list">
-                {response.cards.map((card) => (
-                  <article key={card.title} className="knowledge-card">
-                    <header>
-                      <h3>{card.title}</h3>
-                    </header>
-                    <p>{card.summary}</p>
-                    <h4>关键要点</h4>
-                    <ul>{card.keyPoints.map((item) => <li key={item}>{item}</li>)}</ul>
-                    <h4>常见误区</h4>
-                    <ul>{card.misconceptions.map((item) => <li key={item}>{item}</li>)}</ul>
-                    <h4>可执行建议</h4>
-                    <ul>{card.actions.map((item) => <li key={item.title}><strong>{item.title}</strong>：{item.detail}</li>)}</ul>
-                    {card.safetyNote && <p className="safety-inline">{card.safetyNote}</p>}
-                    <h4>可以继续问</h4>
-                    <ul>{card.followUpQuestions.map((item) => <li key={item}>{item}</li>)}</ul>
-                  </article>
-                ))}
+                {response.cards.map((card) => {
+                  const isExpanded = expandedCards.has(card.title);
+                  return (
+                    <article key={card.title} className="knowledge-card-refined">
+                      <header>
+                        <h3>{card.title}</h3>
+                      </header>
+                      <p className="knowledge-summary">{card.summary}</p>
+
+                      {/* Key points - always visible */}
+                      <div className="knowledge-section-inner">
+                        <h4>关键要点</h4>
+                        <ul>
+                          {card.keyPoints.slice(0, 3).map((item) => (
+                            <li key={item}><i data-lucide="sparkle" style={{ width: '12px', height: '12px', display: 'inline-block', verticalAlign: 'middle', marginRight: '4px' }}></i>{item}</li>
+                          ))}
+                        </ul>
+                      </div>
+
+                      {/* Expandable content */}
+                      <button
+                        type="button"
+                        className="collapse-toggle"
+                        onClick={() => toggleCard(card.title)}
+                        aria-expanded={isExpanded}
+                      >
+                        {isExpanded ? '收起详情' : '展开详情'}
+                      </button>
+
+                      <div className={`collapse-content${isExpanded ? ' open' : ''}`}>
+                        <div className="collapse-inner">
+                          {/* Misconceptions */}
+                          {card.misconceptions.length > 0 && (
+                            <div className="knowledge-section-inner misconceptions-box">
+                              <h4>⚠ 常见误区</h4>
+                              <ul>
+                                {card.misconceptions.map((item) => (
+                                  <li key={item}>{item}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+
+                          {/* Actions */}
+                          {card.actions.length > 0 && (
+                            <div className="knowledge-section-inner">
+                              <h4>可执行建议</h4>
+                              <div className="actions-list">
+                                {card.actions.map((item, idx) => (
+                                  <div key={item.title} className="action-item">
+                                    <span className="action-num">{idx + 1}</span>
+                                    <p>
+                                      <strong>{item.title}</strong>：{item.detail}
+                                    </p>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Safety note */}
+                          {card.safetyNote && (
+                            <p className="safety-notice high-risk" style={{ marginTop: '8px' }}>
+                              {card.safetyNote}
+                            </p>
+                          )}
+
+                          {/* Follow-up questions */}
+                          {card.followUpQuestions.length > 0 && (
+                            <div className="knowledge-section-inner">
+                              <h4>可以继续问</h4>
+                              <div className="follow-up-bar">
+                                {card.followUpQuestions.map((item) => (
+                                  <span key={item} className="follow-up-chip">
+                                    {item}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </article>
+                  );
+                })}
               </div>
 
               <div className="chat-actions">

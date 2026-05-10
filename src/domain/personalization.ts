@@ -6,89 +6,117 @@ interface BuildPersonalizationInput {
   diarySummary: DiarySummary | undefined;
 }
 
-function determineSeverity(input: BuildPersonalizationInput): PersonalizedSleepProfile['severity'] {
+function signals(profile: SleepProfile): string[] {
+  return [
+    ...profile.safetySignals,
+    ...(profile.emotionState ?? []),
+    ...(profile.medicationStatus ?? []),
+    ...(profile.medicalConditions ?? []),
+    profile.daytimeImpact,
+    profile.optionalContext,
+  ].filter(Boolean);
+}
+
+function includesAny(values: string[], patterns: string[]): boolean {
+  return values.some((value) => patterns.some((pattern) => value.includes(pattern)));
+}
+
+function hasDaytimeImpairment(profile: SleepProfile): boolean {
+  return /疲惫|嗜睡|功能|工作|学习|影响|无法|困倦/.test(profile.daytimeImpact);
+}
+
+function hasShortSleep(input: BuildPersonalizationInput): boolean {
+  const profileHours = Number(input.profile.sleepDurationHours);
+  const profileShort = Number.isFinite(profileHours) && profileHours > 0 && profileHours < 5;
+  const diaryShort = typeof input.diarySummary?.averageSleepDurationMinutes === 'number'
+    && input.diarySummary.averageSleepDurationMinutes < 300;
+  return profileShort || diaryShort;
+}
+
+function careReasons(input: BuildPersonalizationInput): string[] {
   const { profile, assessmentResult } = input;
+  const allSignals = signals(profile);
+  const reasons: string[] = [];
 
-  // Safety signals take precedence - severe
-  const hasApneaSignal = profile.safetySignals?.some(
-    (s) => s.includes('呼吸暂停') || s.includes('apnea')
-  );
-  const hasSelfHarmSignal = profile.safetySignals?.some(
-    (s) => s.includes('自我伤害') || s.includes('自伤')
-  );
-  if (hasApneaSignal || hasSelfHarmSignal) return 'severe';
-
-  // Check medical conditions for apnea indicators
-  const hasApneaCondition = profile.medicalConditions?.some(
-    (c) => c.includes('呼吸暂停') || c.includes('apnea')
-  );
-  if (hasApneaCondition) return 'severe';
-
-  // Check assessment result
-  if (assessmentResult) {
-    if (assessmentResult.isi.level === 'severe') return 'severe';
-    if (assessmentResult.isi.level === 'moderate') {
-      // Moderate with chronic insomnia and daytime impact = moderate still
-      return 'moderate';
-    }
-    if (assessmentResult.isi.level === 'mild') return 'mild';
-    return 'low';
+  if (includesAny(allSignals, ['自我伤害', '自伤', '轻生', '伤害自己'])) {
+    reasons.push('存在自伤或严重情绪风险信号');
+  }
+  if (includesAny(allSignals, ['呼吸暂停', '憋醒', 'apnea'])) {
+    reasons.push('疑似睡眠呼吸暂停');
+  }
+  if (includesAny(allSignals, ['胸痛', '重大基础疾病', '慢性病'])) {
+    reasons.push('存在基础疾病或胸痛相关信号');
+  }
+  if (includesAny(allSignals, ['孕期', '产后'])) {
+    reasons.push('孕期或产后睡眠问题需要谨慎评估');
+  }
+  if (includesAny(allSignals, ['药物依赖', '长期使用助眠药', '每晚使用', '长期用药'])) {
+    reasons.push('存在助眠药物依赖或长期用药信号');
+  }
+  profile.safetySignals
+    .filter((signal) => signal && !reasons.some((reason) => reason.includes(signal)))
+    .forEach((signal) => reasons.push(`存在安全信号：${signal}`));
+  if (assessmentResult?.isi.level === 'severe') {
+    reasons.push('失眠严重程度为重度');
+  }
+  if (assessmentResult?.psqiLite.level === 'poor' && hasDaytimeImpairment(profile)) {
+    reasons.push('睡眠质量较差且影响白天功能');
+  }
+  if (profile.concernDuration === '3个月以上' && hasDaytimeImpairment(profile)) {
+    reasons.push('慢性失眠伴有日间功能损害');
+  }
+  if (hasShortSleep(input) && hasDaytimeImpairment(profile)) {
+    reasons.push('睡眠时长明显不足且伴随白天影响');
   }
 
-  // Legacy profile without assessment - default to mild
-  return 'mild';
+  return Array.from(new Set(reasons));
+}
+
+function determineSeverity(input: BuildPersonalizationInput): PersonalizedSleepProfile['severity'] {
+  const { profile, assessmentResult } = input;
+  const reasons = careReasons(input);
+  const severeReasons = reasons.filter((reason) =>
+    !reason.includes('睡眠时长明显不足') && !reason.includes('慢性失眠伴有日间功能损害'),
+  );
+
+  if (severeReasons.length > 0) return 'severe';
+  if (
+    assessmentResult?.isi.level === 'moderate' ||
+    assessmentResult?.psqiLite.level === 'poor' ||
+    reasons.length > 0 ||
+    hasShortSleep(input)
+  ) {
+    return 'moderate';
+  }
+  if (
+    assessmentResult?.isi.level === 'mild' ||
+    profile.concernDuration === '1-3个月' ||
+    profile.stressLevel === '很高' ||
+    profile.stressLevel === '较高' ||
+    profile.habits.length > 0 ||
+    (profile.dietHabit ?? []).length > 0
+  ) {
+    return 'mild';
+  }
+
+  return 'low';
 }
 
 function determineCareAdvice(input: BuildPersonalizationInput): PersonalizedSleepProfile['careAdvice'] {
-  const { profile, assessmentResult } = input;
-  const reasons: string[] = [];
+  const reasons = careReasons(input);
+  if (reasons.length === 0) return { shouldSeekCare: false, reasons: [], urgency: 'routine' };
 
-  // Safety signals require urgent care
-  const hasApneaSignal = profile.safetySignals?.some(
-    (s) => s.includes('呼吸暂停') || s.includes('apnea')
+  const urgent = reasons.some((reason) =>
+    reason.includes('自伤') ||
+    reason.includes('呼吸暂停') ||
+    reason.includes('胸痛') ||
+    reason.includes('孕期') ||
+    reason.includes('重度') ||
+    reason.includes('药物依赖') ||
+    reason.includes('安全信号'),
   );
-  const hasSelfHarmSignal = profile.safetySignals?.some(
-    (s) => s.includes('自我伤害') || s.includes('自伤')
-  );
-  if (hasApneaSignal) {
-    reasons.push('疑似睡眠呼吸暂停');
-    return { shouldSeekCare: true, reasons, urgency: 'urgent' };
-  }
-  if (hasSelfHarmSignal) {
-    reasons.push('自我伤害信号');
-    return { shouldSeekCare: true, reasons, urgency: 'urgent' };
-  }
 
-  // Check medical conditions
-  const hasApneaCondition = profile.medicalConditions?.some(
-    (c) => c.includes('呼吸暂停') || c.includes('apnea')
-  );
-  if (hasApneaCondition) {
-    reasons.push('疑似睡眠呼吸暂停');
-    return { shouldSeekCare: true, reasons, urgency: 'urgent' };
-  }
-
-  // Chronic insomnia (>3 months) with daytime impairment
-  const isChronic = profile.concernDuration === '3个月以上';
-  const hasDaytimeImpact = profile.daytimeImpact && profile.daytimeImpact !== '无明显影响';
-  if (isChronic && hasDaytimeImpact) {
-    reasons.push('慢性失眠伴有日间功能损害');
-    return { shouldSeekCare: true, reasons, urgency: 'soon' };
-  }
-
-  // Assessment-based recommendations
-  if (assessmentResult) {
-    if (assessmentResult.isi.level === 'severe') {
-      reasons.push('失眠严重程度为重度');
-      return { shouldSeekCare: true, reasons, urgency: 'urgent' };
-    }
-    if (assessmentResult.isi.level === 'moderate') {
-      reasons.push('失眠严重程度为中度');
-      return { shouldSeekCare: true, reasons, urgency: 'soon' };
-    }
-  }
-
-  return { shouldSeekCare: false, reasons: [], urgency: 'routine' };
+  return { shouldSeekCare: true, reasons, urgency: urgent ? 'urgent' : 'soon' };
 }
 
 function determineTcmPattern(profile: SleepProfile): PersonalizedSleepProfile['tcmDirection'] {

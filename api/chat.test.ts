@@ -166,6 +166,45 @@ describe('chat api', () => {
     expect(res.body).toMatchObject({ riskLevel: 'high_risk' });
   });
 
+  it('keeps non-urgent care advice in the provider prompt instead of using generic fallback', async () => {
+    let capturedPrompt = '';
+    vi.mocked(callAiProvider).mockImplementation(async (prompt: string) => {
+      capturedPrompt = prompt;
+      return {
+        content: JSON.stringify({
+          riskLevel: 'high_risk',
+          summary: '建议预约睡眠门诊评估，同时先保持固定起床时间。',
+          possibleFactors: ['慢性失眠伴有日间功能损害'],
+          suggestions: [{ title: '预约评估', detail: '准备睡眠日志和持续时间信息。' }],
+          nextQuestions: ['这种情况持续多久了？'],
+          seekCareNotice: '建议尽快寻求专业评估。',
+          disclaimer: '本内容仅提供健康管理参考，不作为医疗诊断。',
+        }),
+      };
+    });
+    const res = mockRes();
+
+    await handler({
+      method: 'POST',
+      body: {
+        profile: {
+          ...profile,
+          concernDuration: '3个月以上',
+          daytimeImpact: '白天明显疲惫，工作受影响',
+        },
+        message: '我还能怎么改善睡眠？',
+        history: [],
+      },
+    } as never, res as never);
+
+    expect(callAiProvider).toHaveBeenCalledTimes(1);
+    expect(capturedPrompt).toContain('慢性失眠伴有日间功能损害');
+    expect(res.body).toMatchObject({
+      riskLevel: 'high_risk',
+      summary: '建议预约睡眠门诊评估，同时先保持固定起床时间。',
+    });
+  });
+
   it('includes assessment context in prompt when provided', async () => {
     const assessmentResult: AssessmentResult = {
       completedAt: '2024-01-15T10:00:00Z',

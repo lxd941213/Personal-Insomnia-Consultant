@@ -88,6 +88,7 @@ describe('sleep plans', () => {
       assessmentResult: {
         ...assessment,
         isi: { ...assessment.isi, level: 'mild' as const },
+        psqiLite: { ...assessment.psqiLite, level: 'fair' as const },
       },
       diarySummary,
     });

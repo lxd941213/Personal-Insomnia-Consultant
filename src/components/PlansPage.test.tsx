@@ -42,4 +42,17 @@ describe('PlansPage', () => {
     expect(screen.getByText(/第1天/)).toBeInTheDocument();
     expect(screen.getByText(/第7天/)).toBeInTheDocument();
   });
+
+  it('does not render seven daily tasks when professional care should come first', () => {
+    render(
+      <PlansPage
+        profile={{ ...profile, safetySignals: ['疑似睡眠呼吸暂停'] }}
+        assessmentResult={assessmentResult}
+      />,
+    );
+
+    expect(screen.getAllByText('优先进行专业评估').length).toBeGreaterThan(0);
+    expect(screen.queryByText(/第1天/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/第7天/)).not.toBeInTheDocument();
+  });
 });
