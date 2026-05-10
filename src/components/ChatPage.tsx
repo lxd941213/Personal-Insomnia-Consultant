@@ -1,8 +1,9 @@
 import { type FormEvent, useState, useCallback, useEffect } from 'react';
 import { sendChatMessage } from '../api/chatClient';
 import type { AssessmentResult, ChatMessage, FeedbackEvent, SleepProfile, SleepScenario } from '../domain/types';
+import { buildProgramStats, getProgramTaskTemplate } from '../domain/program';
 import { getScenarioDefinition } from '../domain/scenarios';
-import { clearAllLocalData, type ChatHistoryScope, getFeedbackEvents, getScopedChatHistory, saveFeedbackEvents, saveScopedChatHistory } from '../storage/localStore';
+import { clearAllLocalData, type ChatHistoryScope, getDailyTaskLogs, getFeedbackEvents, getScopedChatHistory, saveFeedbackEvents, saveScopedChatHistory } from '../storage/localStore';
 import { FeedbackControl } from './FeedbackControl';
 import { MessageList } from './MessageList';
 
@@ -51,12 +52,23 @@ export function ChatPage({ profile, chatScope = 'general', assessmentResult, ini
     setError('');
 
     try {
+      const programLogs = getDailyTaskLogs();
+      const stats = buildProgramStats(programLogs);
+      const currentDay = Math.min(programLogs.length + 1, 14);
+      const todayTask = getProgramTaskTemplate()[currentDay - 1];
+
       const response = await sendChatMessage({
         profile,
         message: userMessage.content,
         history: messages,
         assessmentResult: assessmentResult ?? undefined,
         scenario: initialScenario ?? undefined,
+        programContext: {
+          currentDay,
+          todayTask,
+          stats,
+          safetyStatus: profile.safetySignals.length > 0 ? 'needs_care' : 'active',
+        },
       });
       const assistantMessage: ChatMessage = {
         id: makeId(),

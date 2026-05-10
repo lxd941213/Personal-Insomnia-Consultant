@@ -1,6 +1,7 @@
 import { getScenarioDefinition } from '../src/domain/scenarios';
 import { formatPersonalizationForPrompt } from '../src/domain/personalization';
-import type { AssessmentResult, ChatMessage, PersonalizedSleepProfile, SleepProfile, SleepScenario } from '../src/domain/types';
+import { buildProgramContextForPrompt } from '../src/domain/program';
+import type { AssessmentResult, ChatMessage, PersonalizedSleepProfile, ProgramPromptContext, SleepProfile, SleepScenario } from '../src/domain/types';
 
 export function formatAssessmentContext(result: AssessmentResult): string {
   return `最近一次睡眠自测：
@@ -16,6 +17,7 @@ export function buildSleepAdvisorPrompt(
   assessmentResult?: AssessmentResult,
   scenario?: SleepScenario,
   personalization?: PersonalizedSleepProfile,
+  programContext?: ProgramPromptContext,
 ): string {
   const recentHistory = history
     .slice(-6)
@@ -28,6 +30,7 @@ export function buildSleepAdvisorPrompt(
   const scenarioContext = scenarioDefinition
     ? `\n- 当前咨询场景：${scenarioDefinition.label}（${scenarioDefinition.description}）`
     : '';
+  const programPromptContext = programContext ? `\n\n${buildProgramContextForPrompt(programContext)}` : '';
 
   return `
 你是一位睡眠健康 AI 顾问，仅提供健康管理参考。
@@ -37,6 +40,7 @@ export function buildSleepAdvisorPrompt(
 高风险信号包括：严重或长期失眠、自伤想法、疑似睡眠呼吸暂停、胸痛、药物依赖、孕期/产后严重睡眠问题、重大基础疾病。
 对于高风险用户，优先建议专业就诊，不提供诊断、处方、药物剂量或强化干预指导。
 如果提供了"个性化睡眠分析"，必须优先遵循其中的严重程度、就医建议和安全边界。
+如果提供了"当前 14 天改善计划"，可以解释今日任务、提供更轻量替代动作、帮助用户复盘没做到的原因，但不能覆盖安全分流规则。
 不得提供处方、具体药物剂量或补充剂剂量；涉及褪黑素、镁、色氨酸等补充剂时，只能建议咨询医生、药师或营养专业人士评估适用性。
 如果用户要求计划，优先使用"7天改善计划"中的每日任务。
 
@@ -69,6 +73,7 @@ export function buildSleepAdvisorPrompt(
 ${scenarioContext}
 ${assessmentContext}
 ${personalizationContext}
+${programPromptContext}
 最近对话：
 ${recentHistory || '暂无历史消息'}
 

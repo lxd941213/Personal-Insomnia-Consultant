@@ -63,4 +63,42 @@ describe('buildSleepAdvisorPrompt', () => {
     expect(prompt).toContain('不提供药物或补充剂剂量');
     expect(prompt).toContain('7天改善计划');
   });
+
+  it('includes current program context without full diary history', () => {
+    const prompt = buildSleepAdvisorPrompt(
+      profile,
+      '为什么今天让我做这个任务？',
+      [],
+      undefined,
+      undefined,
+      undefined,
+      {
+        currentDay: 3,
+        todayTask: {
+          day: 3,
+          title: '睡前手机边界',
+          category: 'sleep_hygiene',
+          evidenceLabel: '睡眠卫生',
+          estimatedMinutes: 5,
+          rationale: '减少睡前刺激。',
+          action: '睡前 30 分钟停止刷短视频。',
+          fallbackAction: '只保留低刺激内容。',
+          safetyNote: null,
+        },
+        stats: {
+          completedCount: 1,
+          skippedCount: 1,
+          completionRate: 50,
+          currentStreak: 0,
+          needsFallback: false,
+        },
+        safetyStatus: 'active',
+      },
+    );
+
+    expect(prompt).toContain('当前 14 天改善计划');
+    expect(prompt).toContain('睡前手机边界');
+    expect(prompt).toContain('禁止覆盖安全分流规则');
+    expect(prompt).not.toContain('完整睡眠日记');
+  });
 });

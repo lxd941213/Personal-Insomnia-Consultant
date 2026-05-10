@@ -1,7 +1,7 @@
 import { normalizeAiResponse, safeFallbackResponse } from '../src/domain/aiResponse';
 import { detectHighRiskSignal } from '../src/domain/safety';
 import { buildPersonalizationProfile } from '../src/domain/personalization';
-import type { AssessmentResult, ChatMessage, SleepProfile, SleepScenario } from '../src/domain/types';
+import type { AssessmentResult, ChatMessage, ProgramPromptContext, SleepProfile, SleepScenario } from '../src/domain/types';
 import { buildSleepAdvisorPrompt } from './prompt';
 import { callAiProvider } from './provider';
 
@@ -55,6 +55,7 @@ export interface ChatInput {
   history?: ChatMessage[];
   assessmentResult?: AssessmentResult;
   scenario?: SleepScenario;
+  programContext?: ProgramPromptContext;
 }
 
 export async function processChat(input: ChatInput): Promise<{ status: number; body: unknown }> {
@@ -81,7 +82,7 @@ export async function processChat(input: ChatInput): Promise<{ status: number; b
   }
 
   try {
-    const prompt = buildSleepAdvisorPrompt(input.profile, input.message, input.history || [], input.assessmentResult, input.scenario, personalization);
+    const prompt = buildSleepAdvisorPrompt(input.profile, input.message, input.history || [], input.assessmentResult, input.scenario, personalization, input.programContext);
     const providerResult = await callAiProvider(prompt);
     const parsed = parseProviderJson(providerResult.content);
     return { status: 200, body: normalizeAiResponse(parsed) };

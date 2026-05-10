@@ -26,6 +26,7 @@ export default function App() {
   const [childView, setChildView] = useState<ChildView>(null);
   const [selectedScenario, setSelectedScenario] = useState<SleepScenario | null>(null);
   const [selectedRelaxationTool, setSelectedRelaxationTool] = useState('breathing-478');
+  const [chatInitialInput, setChatInitialInput] = useState('');
 
   function completeProfile(nextProfile: SleepProfile) {
     saveSleepProfile(nextProfile);
@@ -43,8 +44,9 @@ export default function App() {
     setChildView(null);
   }
 
-  function openChat(scenario?: SleepScenario) {
+  function openChat(scenario?: SleepScenario, initialInput = '') {
     setSelectedScenario(scenario ?? null);
+    setChatInitialInput(initialInput);
     setChildView('chat');
   }
 
@@ -99,7 +101,11 @@ export default function App() {
         chatScope={selectedScenario ?? 'general'}
         assessmentResult={assessmentResult}
         initialScenario={selectedScenario}
-        onBack={() => setChildView(null)}
+        initialInput={chatInitialInput}
+        onBack={() => {
+          setChatInitialInput('');
+          setChildView(null);
+        }}
         onReset={resetProfile}
       />
     );
