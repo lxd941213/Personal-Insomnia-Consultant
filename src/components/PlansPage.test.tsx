@@ -5,6 +5,9 @@ import type { AssessmentResult, SleepDiaryEntry, SleepProfile } from '../domain/
 
 vi.mock('../storage/localStore', () => ({
   getDiaryEntries: (): SleepDiaryEntry[] => [],
+  getSleepProgram: vi.fn(() => null),
+  getDailyTaskLogs: vi.fn(() => []),
+  saveSleepProgram: vi.fn(),
 }));
 
 const profile: SleepProfile = {
@@ -35,15 +38,17 @@ describe('PlansPage', () => {
     expect(screen.getAllByText(/推荐理由/).length).toBeGreaterThan(0);
   });
 
-  it('renders seven daily personalization tasks', () => {
+  it('renders the 14-day program timeline with evidence labels', () => {
     render(<PlansPage profile={profile} assessmentResult={assessmentResult} />);
 
-    expect(screen.getAllByText('7天改善计划').length).toBeGreaterThanOrEqual(1);
-    expect(screen.getByText(/第1天/)).toBeInTheDocument();
-    expect(screen.getByText(/第7天/)).toBeInTheDocument();
+    expect(screen.getByText('14天改善计划')).toBeInTheDocument();
+    expect(screen.getByText(/第1天：睡眠环境重置/)).toBeInTheDocument();
+    expect(screen.getByText(/第14天：第 2 周复盘和下一步/)).toBeInTheDocument();
+    expect(screen.getAllByText('CBT-I').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('睡眠卫生').length).toBeGreaterThan(0);
   });
 
-  it('does not render seven daily tasks when professional care should come first', () => {
+  it('shows professional evaluation guidance instead of timeline actions when care should come first', () => {
     render(
       <PlansPage
         profile={{ ...profile, safetySignals: ['疑似睡眠呼吸暂停'] }}
@@ -52,7 +57,6 @@ describe('PlansPage', () => {
     );
 
     expect(screen.getAllByText('优先进行专业评估').length).toBeGreaterThan(0);
-    expect(screen.queryByText(/第1天/)).not.toBeInTheDocument();
-    expect(screen.queryByText(/第7天/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/第1天：睡眠环境重置/)).not.toBeInTheDocument();
   });
 });

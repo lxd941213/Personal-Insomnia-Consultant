@@ -2849,6 +2849,36 @@ button, input, textarea, select {
   color: var(--moonbeam);
 }
 
+.program-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.program-timeline .timeline-item {
+  padding: 14px;
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-md);
+  background: var(--card-bg);
+}
+
+.program-timeline .timeline-item.today {
+  border-color: rgba(196, 167, 110, 0.65);
+}
+
+.program-timeline .timeline-item.completed {
+  border-color: rgba(94, 198, 142, 0.45);
+}
+
+.program-timeline .timeline-item.skipped {
+  border-color: rgba(244, 177, 131, 0.45);
+}
+
+.task-status-label {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
 /* ─── Refined responsive ─── */
 
 @media (max-width: 640px) {

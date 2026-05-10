@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { sleepPlans, recommendSleepPlans } from '../domain/sleepPlans';
 import { summarizeRecentDiary } from '../domain/sleepDiary';
-import { getDiaryEntries } from '../storage/localStore';
+import { createSleepProgram, resolveProgramState } from '../domain/program';
+import { getDailyTaskLogs, getDiaryEntries, getSleepProgram, saveSleepProgram } from '../storage/localStore';
 import { buildPersonalizationProfile } from '../domain/personalization';
 import type { AssessmentResult, SleepPlan, SleepPlanCategory } from '../domain/types';
 import type { SleepProfile } from '../domain/types';
@@ -35,6 +36,20 @@ export function PlansPage({ profile, assessmentResult }: { profile: SleepProfile
   const personalization = buildPersonalizationProfile({ profile, assessmentResult, diarySummary });
   const [expandedCategories, setExpandedCategories] = useState<Set<SleepPlanCategory>>(new Set());
   const [expandedPlans, setExpandedPlans] = useState<Set<string>>(new Set());
+
+  const existingProgram = getSleepProgram();
+  const program = existingProgram ?? createSleepProgram({ profile, assessmentResult, diarySummary });
+  if (!existingProgram) {
+    saveSleepProgram(program);
+  }
+  const programState = resolveProgramState({
+    program,
+    profile,
+    assessmentResult,
+    diarySummary,
+    logs: getDailyTaskLogs(),
+    today: new Date().toISOString().slice(0, 10),
+  });
 
   function toggleCategory(cat: SleepPlanCategory) {
     setExpandedCategories((prev) => {
@@ -132,21 +147,37 @@ export function PlansPage({ profile, assessmentResult }: { profile: SleepProfile
         </div>
       </section>
 
-      {/* Seven day plan */}
-      {!personalization.careAdvice.shouldSeekCare && (
+      {/* 14-day program timeline */}
+      {programState.program.status === 'needs_care' ? (
         <section>
           <div className="section-header">
-            <h2>7天改善计划</h2>
+            <h2>14天改善计划</h2>
           </div>
-          <div className="timeline">
-            {personalization.sevenDayPlan.map((item, index) => (
-              <div key={item.day} className={`timeline-item${index === 0 ? ' active' : ''}`}>
+          <article className="plan-card-featured">
+            <h3>优先进行专业评估</h3>
+            <p>当前存在需要先排查的安全信号。建议先记录症状、准备问题，并咨询医生或睡眠门诊。</p>
+            {programState.safetyReasons.length > 0 && (
+              <p className="fine-print">原因：{programState.safetyReasons.join('；')}</p>
+            )}
+          </article>
+        </section>
+      ) : (
+        <section>
+          <div className="section-header">
+            <h2>14天改善计划</h2>
+            <span className="section-count">第 {programState.program.currentDay} 天 / 14 天</span>
+          </div>
+          <div className="program-timeline">
+            {programState.tasks.map((item) => (
+              <article key={item.day} className={`timeline-item ${item.status}`}>
+                <div className="program-task-meta">
+                  <span className="evidence-label">{item.evidenceLabel}</span>
+                  <span className="task-status-label">{item.status}</span>
+                </div>
                 <h4>第{item.day}天：{item.title}</h4>
-                <p>{item.task}</p>
-                <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>
-                  💬 {item.checkInPrompt}
-                </p>
-              </div>
+                <p>{item.rationale}</p>
+                <p><strong>动作：</strong>{item.action}</p>
+              </article>
             ))}
           </div>
         </section>
