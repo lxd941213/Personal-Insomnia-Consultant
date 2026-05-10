@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { clearAllLocalData, getAssessmentResult, getChatHistory, getDiaryEntries, getFeedbackEvents, getKnowledgeCache, getRelaxationSessions, getReminderSettings, getScopedChatHistory, getSleepProfile, saveAssessmentResult, saveChatHistory, saveDiaryEntries, saveFeedbackEvents, saveKnowledgeCache, saveRelaxationSessions, saveReminderSettings, saveScopedChatHistory, saveSleepProfile } from './localStore';
+import { clearAllLocalData, getAssessmentResult, getChatHistory, getDailyTaskLogs, getDiaryEntries, getFeedbackEvents, getKnowledgeCache, getRelaxationSessions, getReminderSettings, getScopedChatHistory, getSleepProfile, getSleepProgram, saveAssessmentResult, saveChatHistory, saveDailyTaskLogs, saveDiaryEntries, saveFeedbackEvents, saveKnowledgeCache, saveRelaxationSessions, saveReminderSettings, saveScopedChatHistory, saveSleepProfile, saveSleepProgram } from './localStore';
 import type { SleepDiaryEntry, SleepProfile } from '../domain/types';
-import type { AssessmentResult, KnowledgeResponse } from '../domain/types';
+import type { AssessmentResult, DailyTaskLog, KnowledgeResponse, SleepProgram } from '../domain/types';
 
 const profile: SleepProfile = {
   ageRange: '25-34',
@@ -179,5 +179,48 @@ describe('localStore', () => {
     expect(getDiaryEntries()).toEqual([entry]);
     expect(getReminderSettings()?.bedtimeTime).toBe('22:30');
     expect(getRelaxationSessions()).toHaveLength(1);
+  });
+
+  it('saves and reads the active sleep program', () => {
+    const program: SleepProgram = {
+      id: 'program-1',
+      startedAt: '2026-05-10T08:00:00.000Z',
+      currentDay: 1,
+      status: 'active',
+      templateId: 'cbti_foundation_14_day',
+      createdAt: '2026-05-10T08:00:00.000Z',
+      updatedAt: '2026-05-10T08:00:00.000Z',
+      version: 1,
+    };
+
+    saveSleepProgram(program);
+
+    expect(getSleepProgram()).toEqual(program);
+  });
+
+  it('saves daily task logs and clears them with reset', () => {
+    const logs: DailyTaskLog[] = [{
+      id: 'log-1',
+      programId: 'program-1',
+      day: 1,
+      date: '2026-05-10',
+      status: 'completed',
+      difficulty: 'ok',
+      sleepQuality: 6,
+      sleepLatencyMinutes: 30,
+      awakenings: 1,
+      daytimeEnergy: '一般',
+      note: '',
+      createdAt: '2026-05-10T08:00:00.000Z',
+      updatedAt: '2026-05-10T08:00:00.000Z',
+      version: 1,
+    }];
+
+    saveDailyTaskLogs(logs);
+    expect(getDailyTaskLogs()).toEqual(logs);
+
+    clearAllLocalData();
+    expect(getSleepProgram()).toBeNull();
+    expect(getDailyTaskLogs()).toEqual([]);
   });
 });

@@ -1,4 +1,4 @@
-import type { AssessmentResult, ChatMessage, FeedbackEvent, KnowledgeResponse, RelaxationSession, ReminderSettings, SleepDiaryEntry, SleepProfile, SleepScenario } from '../domain/types';
+import type { AssessmentResult, ChatMessage, DailyTaskLog, FeedbackEvent, KnowledgeResponse, RelaxationSession, ReminderSettings, SleepDiaryEntry, SleepProfile, SleepProgram, SleepScenario } from '../domain/types';
 
 export type ChatHistoryScope = 'general' | SleepScenario;
 type ScopedChatHistories = Partial<Record<ChatHistoryScope, ChatMessage[]>>;
@@ -12,6 +12,8 @@ const keys = {
   diaryEntries: 'sleepDiaryEntries',
   reminderSettings: 'reminderSettings',
   relaxationSessions: 'relaxationSessions',
+  sleepProgram: 'sleepProgram',
+  dailyTaskLogs: 'dailyTaskLogs',
 } as const;
 
 const memoryStore = new Map<string, string>();
@@ -132,6 +134,22 @@ export function saveRelaxationSessions(sessions: RelaxationSession[]): void {
   writeJson(keys.relaxationSessions, sessions);
 }
 
+export function getSleepProgram(): SleepProgram | null {
+  return readJson<SleepProgram | null>(keys.sleepProgram, null);
+}
+
+export function saveSleepProgram(program: SleepProgram): void {
+  writeJson(keys.sleepProgram, program);
+}
+
+export function getDailyTaskLogs(): DailyTaskLog[] {
+  return readJson<DailyTaskLog[]>(keys.dailyTaskLogs, []);
+}
+
+export function saveDailyTaskLogs(logs: DailyTaskLog[]): void {
+  writeJson(keys.dailyTaskLogs, logs);
+}
+
 export function clearAllLocalData(): void {
   removeKey(keys.profile);
   removeKey(keys.chatHistory);
@@ -141,4 +159,6 @@ export function clearAllLocalData(): void {
   removeKey(keys.diaryEntries);
   removeKey(keys.reminderSettings);
   removeKey(keys.relaxationSessions);
+  removeKey(keys.sleepProgram);
+  removeKey(keys.dailyTaskLogs);
 }
