@@ -295,6 +295,63 @@ select:focus-visible,
   gap: 22px;
 }
 
+.form-grid .form-row {
+  display: flex;
+  gap: 14px;
+}
+
+.form-grid .form-row label {
+  flex: 1;
+}
+
+/* Card styles for ProfileWizard */
+.card {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 20px 24px;
+  margin-bottom: 16px;
+  backdrop-filter: blur(12px);
+  transition: border-color 0.2s ease;
+}
+
+.card:hover {
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.card-title {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--moonbeam);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.card-title::before {
+  content: '';
+  display: block;
+  width: 3px;
+  height: 12px;
+  background: linear-gradient(180deg, #e6c97a 0%, #a8843c 100%);
+  border-radius: 2px;
+}
+
+.form-grid .two-col > label,
+.form-grid .three-col > label {
+  flex: 1;
+}
+
+.inline-row {
+  display: flex;
+  gap: 12px;
+}
+
+.inline-row > * {
+  flex: 1;
+}
+
 .form-grid h1 {
   font-family: 'Noto Serif SC', serif;
   font-size: 22px;
