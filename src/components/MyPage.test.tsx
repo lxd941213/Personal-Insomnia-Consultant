@@ -24,21 +24,21 @@ describe('MyPage', () => {
   });
 
   it('renders my page with profile and data management', () => {
-    render(<MyPage profile={profile} onReset={vi.fn()} />);
+    render(<MyPage profile={profile} onOpenResetDrawer={vi.fn()} />);
     expect(screen.getByText('我的')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '重置档案' })).toBeInTheDocument();
   });
 
   it('displays profile information', () => {
-    render(<MyPage profile={profile} onReset={vi.fn()} />);
+    render(<MyPage profile={profile} onOpenResetDrawer={vi.fn()} />);
     expect(screen.getByText('睡眠档案')).toBeInTheDocument();
     expect(screen.getByText(/通常睡眠/)).toBeInTheDocument();
   });
 
-  it('calls onReset when reset button is clicked', async () => {
+  it('calls onOpenResetDrawer when reset button is clicked', async () => {
     const user = userEvent.setup();
     const handleReset = vi.fn();
-    render(<MyPage profile={profile} onReset={handleReset} />);
+    render(<MyPage profile={profile} onOpenResetDrawer={handleReset} />);
 
     await user.click(screen.getByRole('button', { name: '重置档案' }));
 
@@ -47,7 +47,7 @@ describe('MyPage', () => {
 
   it('saves reminder settings from the my page', async () => {
     const user = userEvent.setup();
-    render(<MyPage profile={profile} onReset={vi.fn()} />);
+    render(<MyPage profile={profile} onOpenResetDrawer={vi.fn()} />);
 
     await user.clear(screen.getByLabelText('睡前提醒时间'));
     await user.type(screen.getByLabelText('睡前提醒时间'), '22:10');
