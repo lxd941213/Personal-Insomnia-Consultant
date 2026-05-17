@@ -3,7 +3,7 @@ import type { SleepProfile } from '../domain/types';
 import { buildDefaultReminderSettings } from '../domain/reminders';
 import { getReminderSettings, saveReminderSettings } from '../storage/localStore';
 
-export function MyPage({ profile, onReset }: { profile: SleepProfile; onReset: () => void }) {
+export function MyPage({ profile, onOpenResetDrawer }: { profile: SleepProfile; onOpenResetDrawer: () => void }) {
   const [settings, setSettings] = useState(() => getReminderSettings() ?? buildDefaultReminderSettings());
   const [saved, setSaved] = useState(false);
 
@@ -75,7 +75,7 @@ export function MyPage({ profile, onReset }: { profile: SleepProfile; onReset: (
       <section className="settings-card">
         <h2>本地数据</h2>
         <p>日记、趋势、方案和咨询记录仅保存在本浏览器。</p>
-        <button type="button" onClick={onReset}>
+        <button type="button" onClick={onOpenResetDrawer}>
           重置档案
         </button>
       </section>
