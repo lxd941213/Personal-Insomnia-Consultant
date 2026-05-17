@@ -43,8 +43,8 @@ const ResetConfirmDrawer: React.FC<ResetConfirmDrawerProps> = ({
         <h2 className="reset-drawer-title">确定要重置档案吗？</h2>
         <p className="reset-drawer-desc">重置后以下数据将被永久清除</p>
         <ul className="reset-drawer-list">
-          {clearedItems.map((item) => (
-            <li key={item}>{item}</li>
+          {clearedItems.map((item, index) => (
+            <li key={index}>{item}</li>
           ))}
         </ul>
         <p className="reset-drawer-hint">
