@@ -6,11 +6,7 @@ interface ResetConfirmDrawerProps {
   onConfirm: () => void;
 }
 
-const ResetConfirmDrawer: React.FC<ResetConfirmDrawerProps> = ({
-  isOpen,
-  onClose,
-  onConfirm,
-}) => {
+export function ResetConfirmDrawer({ isOpen, onClose, onConfirm }: ResetConfirmDrawerProps) {
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
@@ -69,6 +65,4 @@ const ResetConfirmDrawer: React.FC<ResetConfirmDrawerProps> = ({
       </div>
     </div>
   );
-};
-
-export default ResetConfirmDrawer;
+}
