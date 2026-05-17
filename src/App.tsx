@@ -10,6 +10,7 @@ import { MyPage } from './components/MyPage';
 import { PlansPage } from './components/PlansPage';
 import { ProfileWizard } from './components/ProfileWizard';
 import { RelaxationPage } from './components/RelaxationPage';
+import { ResetConfirmDrawer } from './components/ResetConfirmDrawer';
 import { TodayPage } from './components/TodayPage';
 import { TrendsPage } from './components/TrendsPage';
 import type { AssessmentResult, SleepProfile, SleepScenario } from './domain/types';
@@ -26,6 +27,7 @@ export default function App() {
   const [childView, setChildView] = useState<ChildView>(null);
   const [selectedScenario, setSelectedScenario] = useState<SleepScenario | null>(null);
   const [selectedRelaxationTool, setSelectedRelaxationTool] = useState('breathing-478');
+  const [resetDrawerOpen, setResetDrawerOpen] = useState(false);
   const [chatInitialInput, setChatInitialInput] = useState('');
 
   function completeProfile(nextProfile: SleepProfile) {
@@ -58,6 +60,10 @@ export default function App() {
   function openRelaxation(toolId: string) {
     setSelectedRelaxationTool(toolId);
     setChildView('relaxation');
+  }
+
+  function openResetDrawer() {
+    setResetDrawerOpen(true);
   }
 
   // Show ProfileWizard when explicitly navigating to profile
@@ -106,7 +112,7 @@ export default function App() {
           setChatInitialInput('');
           setChildView(null);
         }}
-        onReset={resetProfile}
+        onOpenResetDrawer={openResetDrawer}
       />
     );
   }
@@ -154,7 +160,7 @@ export default function App() {
         return (
           <MyPage
             profile={profile!}
-            onReset={resetProfile}
+            onOpenResetDrawer={openResetDrawer}
           />
         );
     }
@@ -163,6 +169,14 @@ export default function App() {
   return (
     <div className="app-shell">
       {renderTabPage()}
+      <ResetConfirmDrawer
+        isOpen={resetDrawerOpen}
+        onClose={() => setResetDrawerOpen(false)}
+        onConfirm={() => {
+          setResetDrawerOpen(false);
+          resetProfile();
+        }}
+      />
       <BottomTabs active={activeTab} onChange={setActiveTab} />
     </div>
   );
