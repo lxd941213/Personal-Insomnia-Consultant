@@ -17,7 +17,7 @@ interface DashboardPageProps {
   onStartAssessment: () => void;
   onOpenKnowledge: (scenario?: SleepScenario) => void;
   onOpenChat: (scenario?: SleepScenario) => void;
-  onReset: () => void;
+  onOpenResetDrawer: () => void;
 }
 
 export function DashboardPage({
@@ -26,7 +26,7 @@ export function DashboardPage({
   onStartAssessment,
   onOpenKnowledge,
   onOpenChat,
-  onReset,
+  onOpenResetDrawer,
 }: DashboardPageProps) {
   return (
     <main className="page dashboard-page">
@@ -37,7 +37,7 @@ export function DashboardPage({
             {profile.ageRange} · {concernLabels[profile.mainConcern]}
           </p>
         </div>
-        <button type="button" className="reset-btn" onClick={onReset}>
+        <button type="button" className="reset-btn" onClick={onOpenResetDrawer}>
           重置档案
         </button>
       </header>
