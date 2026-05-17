@@ -41,7 +41,7 @@ describe('App', () => {
     await user.type(screen.getByLabelText('白天影响'), '疲劳');
     await user.click(screen.getByRole('button', { name: '开始咨询' }));
 
-    expect(screen.getByRole('heading', { name: '今日睡眠' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: '首页' })).toBeInTheDocument();
   });
 
   it('opens scene chat without exposing the default scene prompt', async () => {
@@ -103,6 +103,7 @@ describe('App', () => {
     // Navigate to My page
     await user.click(screen.getByRole('button', { name: '我的' }));
     await user.click(screen.getByRole('button', { name: '重置档案' }));
+    await user.click(screen.getByRole('button', { name: '确认重置' }));
 
     expect(window.localStorage.getItem('sleepProfile')).toBeNull();
     expect(window.localStorage.getItem('chatHistory')).toBeNull();
