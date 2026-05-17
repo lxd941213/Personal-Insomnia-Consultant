@@ -82,7 +82,7 @@ export async function processChat(input: ChatInput): Promise<{ status: number; b
   }
 
   try {
-    const prompt = buildSleepAdvisorPrompt(input.profile, input.message, input.history || [], input.assessmentResult, input.scenario, personalization, input.programContext);
+    const prompt = buildSleepAdvisorPrompt(input.profile, input.message, input.history || [], input.assessmentResult, input.scenario, personalization, input.programContext, 'user');
     const providerResult = await callAiProvider(prompt);
     const parsed = parseProviderJson(providerResult.content);
     return { status: 200, body: normalizeAiResponse(parsed) };

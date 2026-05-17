@@ -1,7 +1,6 @@
-import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import ResetConfirmDrawer from './ResetConfirmDrawer';
+import { ResetConfirmDrawer } from './ResetConfirmDrawer';
 
 describe('ResetConfirmDrawer', () => {
   const defaultProps = {

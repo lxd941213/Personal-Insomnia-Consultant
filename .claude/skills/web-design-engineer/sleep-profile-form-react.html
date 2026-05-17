@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>睡眠档案 - Personal Insomnia Consultant</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin="anonymous"></script>
+    <style>
+        :root {
+            --bg-deep: #0a0e1a;
+            --card-surface: rgba(255,255,255,0.04);
+            --card-border: rgba(255,255,255,0.08);
+            --accent: #c8b896;
+            --accent-glow: rgba(200,184,150,0.15);
+            --text-primary: #e8e6e1;
+            --text-secondary: rgba(232,230,225,0.6);
+            --text-muted: rgba(232,230,225,0.4);
+            --input-bg: rgba(0,0,0,0.25);
+            --radius-card: 16px;
+            --radius-input: 10px;
+            --radius-chip: 20px;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            background: var(--bg-deep);
+            color: var(--text-primary);
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background:
+                radial-gradient(ellipse at 20% 20%, rgba(100,120,160,0.08) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 80%, rgba(200,184,150,0.05) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        #root { max-width: 560px; margin: 0 auto; }
+
+        .header {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .header h1 {
+            font-family: 'Noto Serif SC', serif;
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+            letter-spacing: 0.02em;
+        }
+
+        .header p {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        /* Card */
+        .card {
+            background: var(--card-surface);
+            border: 1px solid var(--card-border);
+            border-radius: var(--radius-card);
+            padding: 20px 24px;
+            margin-bottom: 16px;
+            backdrop-filter: blur(12px);
+            transition: border-color 0.2s ease;
+        }
+
+        .card:hover { border-color: rgba(255,255,255,0.12); }
+
+        .card-title {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--accent);
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .card-title::before {
+            content: '';
+            width: 3px;
+            height: 12px;
+            background: linear-gradient(180deg, var(--accent), transparent);
+            border-radius: 2px;
+        }
+
+        /* Form rows */
+        .form-row { display: flex; gap: 12px; margin-bottom: 14px; }
+        .form-row:last-child { margin-bottom: 0; }
+        .form-row.three-col > * { flex: 1; }
+        .form-row.two-col > * { flex: 1; }
+
+        /* Labels */
+        label {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            font-size: 12px;
+            color: var(--text-secondary);
+            flex: 1;
+        }
+
+        /* Inputs */
+        select, input, textarea {
+            background: var(--input-bg);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: var(--radius-input);
+            padding: 10px 12px;
+            font-size: 14px;
+            color: var(--text-primary);
+            transition: all 0.2s ease;
+            appearance: none;
+            -webkit-appearance: none;
+            width: 100%;
+        }
+
+        select {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23e8e6e1' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            padding-right: 32px;
+            cursor: pointer;
+        }
+
+        select:focus, input:focus, textarea:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-glow);
+        }
+
+        textarea { min-height: 36px; max-height: 80px; resize: vertical; line-height: 1.4; }
+
+        /* Chips */
+        .chip-fieldset { border: none; margin-bottom: 14px; }
+        .chip-fieldset:last-child { margin-bottom: 0; }
+        .chip-legend { font-size: 12px; color: var(--text-secondary); margin-bottom: 10px; }
+        .chip-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+
+        .chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 14px;
+            background: var(--input-bg);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: var(--radius-chip);
+            font-size: 13px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .chip:hover {
+            background: rgba(255,255,255,0.06);
+            border-color: rgba(255,255,255,0.15);
+            color: var(--text-primary);
+        }
+
+        .chip.selected {
+            background: rgba(200,184,150,0.15);
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .chip svg { width: 14px; height: 14px; opacity: 0.7; }
+        .chip.selected svg { opacity: 1; }
+
+        /* Auto-calc badge */
+        .auto-calc {
+            font-size: 10px;
+            color: var(--accent);
+            background: rgba(200,184,150,0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
+            margin-left: 4px;
+        }
+
+        /* Submit button */
+        .submit-btn {
+            width: 100%;
+            padding: 14px 24px;
+            margin-top: 24px;
+            background: linear-gradient(135deg, var(--accent) 0%, #a8966e 100%);
+            border: none;
+            border-radius: 30px;
+            font-size: 15px;
+            font-weight: 600;
+            color: #1a1a2e;
+            cursor: pointer;
+            letter-spacing: 0.05em;
+            transition: all 0.25s ease;
+            box-shadow: 0 4px 20px rgba(200,184,150,0.25);
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 28px rgba(200,184,150,0.35);
+        }
+
+        .submit-btn:active { transform: translateY(0); }
+
+        .fine-print {
+            text-align: center;
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // Icons
+        const PhoneIcon = () => (
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/>
+            </svg>
+        );
+        const CoffeeIcon = () => (
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/>
+                <line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/>
+            </svg>
+        );
+        const WarningIcon = () => (
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+            </svg>
+        );
+
+        // Chip component
+        const Chip = ({ label, selected, onClick, icon }) => (
+            <button type="button" className={`chip ${selected ? 'selected' : ''}`} onClick={onClick}>
+                {icon}
+                {label}
+            </button>
+        );
+
+        // Card component
+        const Card = ({ title, children }) => (
+            <div className="card">
+                <div className="card-title">{title}</div>
+                {children}
+            </div>
+        );
+
+        // Form Row component
+        const FormRow = ({ children, cols = 2 }) => (
+            <div className={`form-row ${cols === 3 ? 'three-col' : 'two-col'}`}>
+                {children}
+            </div>
+        );
+
+        // Label component
+        const Label = ({ children, required, autoCalc }) => (
+            <label>
+                <span>
+                    {children}
+                    {required && <span style={{color:'var(--accent)'}}>*</span>}
+                    {autoCalc && <span className="auto-calc">自动</span>}
+                </span>
+            </label>
+        );
+
+        // Main Form Component
+        const ProfileWizard = () => {
+            const [profile, setProfile] = useState({
+                ageRange: '',
+                gender: 'unspecified',
+                bedtime: '23:00',
+                wakeTime: '07:00',
+                sleepDurationHours: '8',
+                mainConcern: 'hard_to_fall_asleep',
+                concernDuration: '',
+                stressLevel: '',
+                exerciseHabit: '',
+                phoneUsageHabit: '',
+                daytimeImpact: '',
+                optionalContext: '',
+                habits: ['睡前玩手机'],
+                emotionState: ['焦虑', '烦躁'],
+                dietHabit: ['午后咖啡因'],
+                medicationStatus: ['未用药'],
+                medicalConditions: ['无'],
+                safetySignals: [],
+            });
+
+            const update = (key, value) => setProfile(prev => ({ ...prev, [key]: value }));
+
+            const toggleArray = (key, value) => {
+                setProfile(prev => ({
+                    ...prev,
+                    [key]: prev[key].includes(value)
+                        ? prev[key].filter(v => v !== value)
+                        : [...prev[key], value]
+                }));
+            };
+
+            // Auto-calculate sleep duration
+            useEffect(() => {
+                if (profile.bedtime && profile.wakeTime) {
+                    const [bedH, bedM] = profile.bedtime.split(':').map(Number);
+                    let [wakeH, wakeM] = profile.wakeTime.split(':').map(Number);
+                    let hours = wakeH - bedH;
+                    let mins = wakeM - bedM;
+                    if (mins < 0) { hours -= 1; mins += 60; }
+                    if (hours < 0) hours += 24;
+                    const totalMins = hours * 60 + mins;
+                    const h = Math.round(totalMins / 60);
+                    if (h >= 4 && h <= 9 && profile.sleepDurationHours !== String(h)) {
+                        update('sleepDurationHours', String(h));
+                    }
+                }
+            }, [profile.bedtime, profile.wakeTime]);
+
+            const handleSubmit = (e) => {
+                e.preventDefault();
+                alert('提交成功！');
+            };
+
+            return (
+                <form onSubmit={handleSubmit}>
+                    <div className="header">
+                        <h1>建立您的睡眠档案</h1>
+                        <p>回答以下问题，获取个性化建议</p>
+                    </div>
+
+                    {/* Card 1: Basic Info */}
+                    <Card title="基本信息">
+                        <FormRow cols={2}>
+                            <Label>年龄段</Label>
+                            <Label>性别</Label>
+                        </FormRow>
+                        <div className="form-row two-col" style={{marginBottom: 14}}>
+                            <select value={profile.ageRange} onChange={e => update('ageRange', e.target.value)}>
+                                <option value="">请选择</option>
+                                <option>18岁以下</option><option>18-24岁</option>
+                                <option>25-34岁</option><option>35-44岁</option>
+                                <option>45-59岁</option><option>60岁以上</option>
+                            </select>
+                            <select value={profile.gender} onChange={e => update('gender', e.target.value)}>
+                                <option value="male">男性</option>
+                                <option value="female">女性</option>
+                                <option value="unspecified">暂不透露</option>
+                            </select>
+                        </div>
+
+                        <FormRow cols={3}>
+                            <Label>通常就寝时间</Label>
+                            <Label>通常起床时间</Label>
+                            <Label autoCalc>睡眠时长</Label>
+                        </FormRow>
+                        <div className="form-row three-col" style={{marginBottom: 0}}>
+                            <input type="time" value={profile.bedtime} onChange={e => update('bedtime', e.target.value)} />
+                            <input type="time" value={profile.wakeTime} onChange={e => update('wakeTime', e.target.value)} />
+                            <select value={profile.sleepDurationHours} onChange={e => update('sleepDurationHours', e.target.value)}>
+                                <option value="4">4小时左右</option>
+                                <option value="5">5小时左右</option>
+                                <option value="6">6小时左右</option>
+                                <option value="7">7小时左右</option>
+                                <option value="8">8小时左右</option>
+                                <option value="9">9小时左右</option>
+                            </select>
+                        </div>
+                    </Card>
+
+                    {/* Card 2: Sleep Status */}
+                    <Card title="睡眠状况">
+                        <FormRow cols={3}>
+                            <Label>主要睡眠问题</Label>
+                            <Label>问题持续时间</Label>
+                            <Label>压力水平</Label>
+                        </FormRow>
+                        <div className="form-row three-col" style={{marginBottom: 14}}>
+                            <select value={profile.mainConcern} onChange={e => update('mainConcern', e.target.value)}>
+                                <option value="hard_to_fall_asleep">难以入睡</option>
+                                <option value="early_waking">早醒</option>
+                                <option value="frequent_waking">频繁醒来</option>
+                                <option value="vivid_dreams">多梦</option>
+                                <option value="daytime_sleepiness">白天嗜睡</option>
+                            </select>
+                            <select value={profile.concernDuration} onChange={e => update('concernDuration', e.target.value)}>
+                                <option value="">请选择</option>
+                                <option>不到1周</option><option>1-4周</option>
+                                <option>1-3个月</option><option>3个月以上</option>
+                            </select>
+                            <select value={profile.stressLevel} onChange={e => update('stressLevel', e.target.value)}>
+                                <option value="">请选择</option>
+                                <option>较低</option><option>中等</option>
+                                <option>较高</option><option>很高</option>
+                            </select>
+                        </div>
+
+                        <FormRow cols={2}>
+                            <Label>运动习惯</Label>
+                            <Label>手机使用习惯</Label>
+                        </FormRow>
+                        <div className="form-row two-col" style={{marginBottom: 14}}>
+                            <select value={profile.exerciseHabit} onChange={e => update('exerciseHabit', e.target.value)}>
+                                <option value="">请选择</option>
+                                <option>几乎不运动</option>
+                                <option>每周1-2次轻运动</option>
+                                <option>每周3次以上中等运动</option>
+                                <option>经常夜间剧烈运动</option>
+                            </select>
+                            <select value={profile.phoneUsageHabit} onChange={e => update('phoneUsageHabit', e.target.value)}>
+                                <option value="">请选择</option>
+                                <option>睡前基本不用</option>
+                                <option>睡前偶尔使用</option>
+                                <option>睡前1小时内频繁使用</option>
+                                <option>醒来后会长时间看手机</option>
+                            </select>
+                        </div>
+
+                        <FormRow cols={2}>
+                            <Label>白天影响（选填）</Label>
+                            <Label>补充说明（选填）</Label>
+                        </FormRow>
+                        <div className="form-row two-col" style={{marginBottom: 0}}>
+                            <input type="text" placeholder="如：困倦、注意力不集中" value={profile.daytimeImpact} onChange={e => update('daytimeImpact', e.target.value)} />
+                            <textarea rows="1" placeholder="其他想补充的信息..." value={profile.optionalContext} onChange={e => update('optionalContext', e.target.value)} />
+                        </div>
+                    </Card>
+
+                    {/* Card 3: Lifestyle */}
+                    <Card title="生活习惯">
+                        <fieldset className="chip-fieldset">
+                            <legend className="chip-legend">睡眠相关习惯</legend>
+                            <div className="chip-grid">
+                                {[
+                                    { label: '睡前玩手机', icon: <PhoneIcon /> },
+                                    { label: '午后摄入咖啡因', icon: <CoffeeIcon /> },
+                                    { label: '夜间饮酒' },
+                                    { label: '睡前运动' },
+                                ].map(item => (
+                                    <Chip
+                                        key={item.label}
+                                        label={item.label}
+                                        icon={item.icon}
+                                        selected={profile.habits.includes(item.label)}
+                                        onClick={() => toggleArray('habits', item.label)}
+                                    />
+                                ))}
+                            </div>
+                        </fieldset>
+
+                        <fieldset className="chip-fieldset">
+                            <legend className="chip-legend">情绪状态</legend>
+                            <div className="chip-grid">
+                                {['焦虑', '情绪低落', '烦躁', '平稳'].map(label => (
+                                    <Chip
+                                        key={label}
+                                        label={label}
+                                        selected={profile.emotionState.includes(label)}
+                                        onClick={() => toggleArray('emotionState', label)}
+                                    />
+                                ))}
+                            </div>
+                        </fieldset>
+
+                        <fieldset className="chip-fieldset" style={{marginBottom: 0}}>
+                            <legend className="chip-legend">饮食习惯</legend>
+                            <div className="chip-grid">
+                                {['午后咖啡因', '夜间饮酒', '晚餐过晚', '辛辣高糖'].map(label => (
+                                    <Chip
+                                        key={label}
+                                        label={label}
+                                        selected={profile.dietHabit.includes(label)}
+                                        onClick={() => toggleArray('dietHabit', label)}
+                                    />
+                                ))}
+                            </div>
+                        </fieldset>
+                    </Card>
+
+                    {/* Card 4: Health Info */}
+                    <Card title="健康信息">
+                        <fieldset className="chip-fieldset">
+                            <legend className="chip-legend">基础疾病</legend>
+                            <div className="chip-grid">
+                                {['无', '慢性病', '疼痛', '孕期或产后', '疑似呼吸暂停'].map(label => (
+                                    <Chip
+                                        key={label}
+                                        label={label}
+                                        selected={profile.medicalConditions.includes(label)}
+                                        onClick={() => toggleArray('medicalConditions', label)}
+                                    />
+                                ))}
+                            </div>
+                        </fieldset>
+
+                        <fieldset className="chip-fieldset">
+                            <legend className="chip-legend">用药情况</legend>
+                            <div className="chip-grid">
+                                {['未用药', '偶尔使用助眠产品', '长期使用助眠药', '正在服用其他药物'].map(label => (
+                                    <Chip
+                                        key={label}
+                                        label={label}
+                                        selected={profile.medicationStatus.includes(label)}
+                                        onClick={() => toggleArray('medicationStatus', label)}
+                                    />
+                                ))}
+                            </div>
+                        </fieldset>
+
+                        <fieldset className="chip-fieldset" style={{marginBottom: 0}}>
+                            <legend className="chip-legend">安全信号</legend>
+                            <div className="chip-grid">
+                                {[
+                                    { label: '严重症状', icon: <WarningIcon /> },
+                                    { label: '疑似睡眠呼吸暂停', icon: <WarningIcon /> },
+                                    { label: '自伤想法', icon: <WarningIcon /> },
+                                    { label: '药物依赖' },
+                                    { label: '重大基础疾病' },
+                                    { label: '孕期或产后' },
+                                ].map(item => (
+                                    <Chip
+                                        key={item.label}
+                                        label={item.label}
+                                        icon={item.icon}
+                                        selected={profile.safetySignals.includes(item.label)}
+                                        onClick={() => toggleArray('safetySignals', item.label)}
+                                    />
+                                ))}
+                            </div>
+                        </fieldset>
+                    </Card>
+
+                    <button type="submit" className="submit-btn">开始咨询</button>
+                    <p className="fine-print">您的档案仅存储在本设备的浏览器中</p>
+                </form>
+            );
+        };
+
+        Object.assign(window, { ProfileWizard });
+        ReactDOM.createRoot(document.getElementById('root')).render(<ProfileWizard />);
+    </script>
+</body>
+</html>

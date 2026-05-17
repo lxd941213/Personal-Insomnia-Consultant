@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { sleepPlans, recommendSleepPlans } from '../domain/sleepPlans';
 import { summarizeRecentDiary } from '../domain/sleepDiary';
 import { createSleepProgram, resolveProgramState } from '../domain/program';
@@ -37,9 +37,6 @@ export function PlansPage({ profile, assessmentResult }: { profile: SleepProfile
 
   const existingProgram = getSleepProgram();
   const program = existingProgram ?? createSleepProgram({ profile, assessmentResult, diarySummary });
-  if (!existingProgram) {
-    saveSleepProgram(program);
-  }
   const programState = resolveProgramState({
     program,
     profile,
@@ -48,6 +45,12 @@ export function PlansPage({ profile, assessmentResult }: { profile: SleepProfile
     logs: getDailyTaskLogs(),
     today: new Date().toISOString().slice(0, 10),
   });
+
+  useEffect(() => {
+    if (!getSleepProgram()) {
+      saveSleepProgram(program);
+    }
+  }, [program]);
 
   function toggleCategory(cat: SleepPlanCategory) {
     setExpandedCategories((prev) => {

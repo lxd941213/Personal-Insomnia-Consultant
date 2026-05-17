@@ -13,30 +13,32 @@ export function TrendsPage({ today = new Date().toISOString().slice(0, 10), onOp
   return (
     <main className="page trends-page">
       <h1>睡眠趋势</h1>
-      <section className="metric-grid">
-        <article className="metric-card">
+      <section className="metric-grid trend-metrics">
+        <article className="metric-card trend-card">
           <h2>近 7 天</h2>
-          <p>记录 {trends.last7Days.entryCount} 天</p>
-          <p>平均入睡耗时 {trends.last7Days.averageSleepLatencyMinutes ?? '--'} 分钟</p>
+          <p className="metric-value">{trends.last7Days.entryCount} 天</p>
+          <p className="metric-meta">记录 {trends.last7Days.entryCount} 天 · 平均入睡耗时 {trends.last7Days.averageSleepLatencyMinutes ?? '--'} 分钟</p>
         </article>
-        <article className="metric-card">
+        <article className="metric-card trend-card">
           <h2>近 30 天</h2>
-          <p>记录 {trends.last30Days.entryCount} 天</p>
-          <p>平均睡眠质量 {trends.last30Days.averageSleepQuality ?? '--'}</p>
+          <p className="metric-value">{trends.last30Days.entryCount} 天</p>
+          <p className="metric-meta">记录 {trends.last30Days.entryCount} 天 · 平均睡眠质量 {trends.last30Days.averageSleepQuality ?? '--'}</p>
         </article>
-        <article className="metric-card">
+        <article className="metric-card trend-card">
           <h2>改善执行</h2>
-          <p>完成率 {programStats.completionRate}%</p>
-          <p>连续完成 {programStats.currentStreak} 天</p>
+          <p className="metric-value">{programStats.completionRate}%</p>
+          <p className="metric-meta">完成率 {programStats.completionRate}% · 连续完成 {programStats.currentStreak} 天</p>
         </article>
-        <article className="metric-card">
+        <article className="metric-card trend-card">
           <h2>任务反馈</h2>
-          <p>完成 {programStats.completedCount} 个</p>
-          <p>跳过 {programStats.skippedCount} 个</p>
+          <p className="metric-value">{programStats.completedCount} 个</p>
+          <p className="metric-meta">完成 {programStats.completedCount} 个 · 跳过 {programStats.skippedCount} 个</p>
         </article>
       </section>
-      {trends.insights.map((insight) => <p key={insight}>{insight}</p>)}
-      <p>{programInsight}</p>
+      <section className="trend-insights" aria-label="趋势洞察">
+        {trends.insights.map((insight) => <p key={insight}>{insight}</p>)}
+        <p>{programInsight}</p>
+      </section>
       {trends.last7Days.entryCount === 0 && (
         <button type="button" className="action-btn" onClick={onOpenDiary}>去记录睡前状态</button>
       )}

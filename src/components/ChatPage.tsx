@@ -3,7 +3,7 @@ import { sendChatMessage } from '../api/chatClient';
 import type { AssessmentResult, ChatMessage, FeedbackEvent, SleepProfile, SleepScenario } from '../domain/types';
 import { createSleepProgram, resolveProgramState, resolveTodayProgramTask } from '../domain/program';
 import { getScenarioDefinition } from '../domain/scenarios';
-import { clearAllLocalData, type ChatHistoryScope, getDailyTaskLogs, getFeedbackEvents, getScopedChatHistory, getSleepProgram, saveFeedbackEvents, saveScopedChatHistory } from '../storage/localStore';
+import { type ChatHistoryScope, getDailyTaskLogs, getFeedbackEvents, getScopedChatHistory, getSleepProgram, saveFeedbackEvents, saveScopedChatHistory } from '../storage/localStore';
 import { FeedbackControl } from './FeedbackControl';
 import { MessageList } from './MessageList';
 

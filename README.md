@@ -14,7 +14,7 @@ Mobile-first H5 MVP for a sleep wellness AI consultant.
 - AI-powered sleep knowledge cards with caching.
 - Scene-based consultation with scenario prompts.
 - Bilingual Chinese/English interface (Chinese UI).
-- 14-day sleep improvement program with one daily task.
+- Plan-page 14-day sleep improvement program with one daily task.
 - Deterministic safety gate before ordinary behavior tasks.
 - Lightweight daily task feedback with local progress tracking.
 - Trusted built-in sleep knowledge content before optional AI supplements.
@@ -51,9 +51,9 @@ The AI response is for health management reference only and is not medical diagn
 
 ## Sleep Enhancement Data
 
-The enhanced diary, trend, reminder, relaxation, and plan recommendation features are local-first. Data is stored in this browser through localStorage with sync-ready IDs and timestamps, but this version does not include accounts, backend storage, browser notifications, or audio playback.
+The enhanced diary, trend, relaxation, and plan recommendation features are local-first. Data is stored in this browser through localStorage with sync-ready IDs and timestamps, but this version does not include accounts, backend storage, browser notifications, or audio playback.
 
-The 14-day program, task logs, completion metrics, and trusted knowledge content are local-first. They are designed to work without accounts or cloud sync, and high-risk profiles are routed to professional evaluation guidance before ordinary behavior tasks.
+The 14-day program is surfaced from the plan page, while completion metrics and trusted knowledge content remain local-first. They are designed to work without accounts or cloud sync, and high-risk profiles are routed to professional evaluation guidance before ordinary behavior tasks.
 
 Verification:
 

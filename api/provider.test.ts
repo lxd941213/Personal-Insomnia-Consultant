@@ -31,7 +31,7 @@ describe('callAiProvider', () => {
     expect(mockFetch).toHaveBeenCalledWith('https://api.minimaxi.com/v1/chat/completions', expect.objectContaining({ method: 'POST' }));
     expect(body).toMatchObject({
       model: 'MiniMax-M2.7',
-      temperature: 1,
+      temperature: 0.3,
       reasoning_split: true,
     });
     expect(body).not.toHaveProperty('response_format');

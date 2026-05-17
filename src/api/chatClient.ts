@@ -8,13 +8,16 @@ interface SendChatMessageInput {
   assessmentResult?: AssessmentResult | null;
   scenario?: SleepScenario | null;
   programContext?: ProgramPromptContext;
+  signal?: AbortSignal;
 }
 
 export async function sendChatMessage(input: SendChatMessageInput): Promise<AiResponse> {
+  const { signal, ...body } = input;
   const response = await fetch('/api/chat', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(input),
+    body: JSON.stringify(body),
+    signal,
   });
 
   if (!response.ok) {

@@ -1,0 +1,861 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UI 优化预览 - 个人失眠顾问</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      /* Current */
+      --current-deep: #0b1026;
+      --current-mid: #131b36;
+      --current-surface: #1a2444;
+      --current-elevated: #222d52;
+      --current-moonbeam: #c4a76e;
+      --current-mist: #e8e0d4;
+      --current-text: #eae4da;
+      --current-text-secondary: rgba(234, 228, 218, 0.6);
+
+      /* Proposed - Deeper & More Refined */
+      --proposed-deep: #070810;
+      --proposed-mid: #0d0f1c;
+      --proposed-surface: #131525;
+      --proposed-elevated: #1a1e35;
+      --proposed-moonbeam: #c9b87a;
+      --proposed-mist: #f0ebe3;
+      --proposed-text: #f0ebe3;
+      --proposed-text-secondary: rgba(240, 235, 227, 0.55);
+
+      /* Alternative - Sage Green Accent */
+      --alt-deep: #0a0d12;
+      --alt-mid: #0f1318;
+      --alt-surface: #161b22;
+      --alt-elevated: #1e242d;
+      --alt-accent: #7a9e7a;
+      --alt-mist: #e8ebe6;
+      --alt-text: #e8ebe6;
+
+      /* Alternative - Warm Dark */
+      --warm-deep: #0c0a08;
+      --warm-mid: #141210;
+      --warm-surface: #1c1916;
+      --warm-elevated: #252220;
+      --warm-moonbeam: #d4a853;
+      --warm-mist: #f5f0e8;
+      --warm-text: #f5f0e8;
+    }
+
+    body {
+      font-family: 'LXGW WenKai', 'Noto Serif SC', serif;
+      min-height: 100vh;
+      background: #111;
+      color: #fff;
+      padding: 40px;
+    }
+
+    h1 {
+      font-size: 28px;
+      margin-bottom: 8px;
+      color: #fff;
+    }
+
+    .subtitle {
+      color: rgba(255,255,255,0.5);
+      margin-bottom: 32px;
+      font-size: 14px;
+    }
+
+    .preview-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+      gap: 24px;
+      max-width: 1600px;
+      margin: 0 auto;
+    }
+
+    .preview-card {
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    }
+
+    .preview-header {
+      padding: 16px 20px;
+      background: rgba(255,255,255,0.05);
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      font-size: 14px;
+      font-weight: 600;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .preview-header .tag {
+      font-size: 11px;
+      padding: 4px 10px;
+      border-radius: 20px;
+      background: rgba(255,255,255,0.1);
+      color: rgba(255,255,255,0.6);
+    }
+
+    .preview-header .tag.current {
+      background: rgba(196, 167, 110, 0.2);
+      color: #c4a76e;
+    }
+
+    .preview-header .tag.proposed {
+      background: rgba(100, 200, 150, 0.2);
+      color: #64c896;
+    }
+
+    .preview-header .tag.alt {
+      background: rgba(120, 160, 220, 0.2);
+      color: #78a0dc;
+    }
+
+    .preview-body {
+      padding: 20px;
+      min-height: 600px;
+      position: relative;
+    }
+
+    /* Current Theme */
+    .theme-current {
+      background: var(--current-deep);
+    }
+
+    .theme-current .card {
+      background: var(--current-surface);
+      border: 1px solid rgba(168, 180, 214, 0.08);
+      border-radius: 16px;
+      padding: 18px;
+      margin-bottom: 14px;
+    }
+
+    .theme-current .card.accent {
+      border-color: rgba(196, 167, 110, 0.3);
+      background: linear-gradient(145deg, var(--current-surface), rgba(196, 167, 110, 0.05));
+    }
+
+    .theme-current .moon-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: linear-gradient(145deg, var(--current-moonbeam), #a08050);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 16px;
+      box-shadow: 0 0 30px rgba(196, 167, 110, 0.3);
+    }
+
+    .theme-current .h1 {
+      font-size: 22px;
+      color: var(--current-mist);
+      margin-bottom: 6px;
+    }
+
+    .theme-current .text-secondary {
+      font-size: 13px;
+      color: var(--current-text-secondary);
+      margin-bottom: 20px;
+    }
+
+    .theme-current .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      background: rgba(196, 167, 110, 0.1);
+      border: 1px solid rgba(196, 167, 110, 0.2);
+      border-radius: 20px;
+      font-size: 12px;
+      color: var(--current-moonbeam);
+      margin-bottom: 16px;
+    }
+
+    .theme-current .section-title {
+      font-size: 13px;
+      color: var(--current-moonbeam);
+      margin-bottom: 12px;
+      letter-spacing: 0.08em;
+    }
+
+    .theme-current .task-card {
+      background: var(--current-surface);
+      border: 1px solid rgba(196, 167, 110, 0.2);
+      border-radius: 16px;
+      padding: 16px;
+    }
+
+    .theme-current .task-card h3 {
+      font-size: 16px;
+      color: var(--current-mist);
+      margin-bottom: 8px;
+    }
+
+    .theme-current .task-card p {
+      font-size: 13px;
+      color: var(--current-text-secondary);
+      line-height: 1.6;
+      margin-bottom: 12px;
+    }
+
+    .theme-current .btn {
+      padding: 10px 20px;
+      border-radius: 24px;
+      font-size: 14px;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .theme-current .btn-primary {
+      background: linear-gradient(135deg, var(--current-moonbeam), #a08050);
+      color: var(--current-deep);
+    }
+
+    .theme-current .btn-secondary {
+      background: transparent;
+      border: 1px solid rgba(168, 180, 214, 0.2);
+      color: var(--current-text-secondary);
+    }
+
+    .theme-current .chips {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .theme-current .chip {
+      padding: 6px 12px;
+      border-radius: 16px;
+      font-size: 12px;
+      border: 1px solid rgba(168, 180, 214, 0.15);
+      color: var(--current-text-secondary);
+    }
+
+    .theme-current .chip.selected {
+      background: rgba(196, 167, 110, 0.15);
+      border-color: rgba(196, 167, 110, 0.4);
+      color: var(--current-moonbeam);
+    }
+
+    .theme-current .input {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1px solid rgba(168, 180, 214, 0.15);
+      border-radius: 10px;
+      background: var(--current-mid);
+      color: var(--current-text);
+      font-size: 14px;
+      margin-top: 12px;
+    }
+
+    /* Proposed Theme */
+    .theme-proposed {
+      background: var(--proposed-deep);
+    }
+
+    .theme-proposed .card {
+      background: var(--proposed-surface);
+      border: 1px solid rgba(255, 255, 255, 0.04);
+      border-radius: 16px;
+      padding: 18px;
+      margin-bottom: 14px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    }
+
+    .theme-proposed .card.accent {
+      border-color: rgba(201, 184, 122, 0.35);
+      background: linear-gradient(145deg, var(--proposed-surface), rgba(201, 184, 122, 0.03));
+      box-shadow: 0 4px 30px rgba(0, 0, 0, 0.4), 0 0 40px rgba(201, 184, 122, 0.05);
+    }
+
+    .theme-proposed .moon-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: linear-gradient(145deg, var(--proposed-moonbeam), #a09060);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 16px;
+      box-shadow: 0 0 40px rgba(201, 184, 122, 0.35);
+    }
+
+    .theme-proposed .h1 {
+      font-size: 22px;
+      color: var(--proposed-mist);
+      margin-bottom: 6px;
+    }
+
+    .theme-proposed .text-secondary {
+      font-size: 13px;
+      color: var(--proposed-text-secondary);
+      margin-bottom: 20px;
+    }
+
+    .theme-proposed .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      background: rgba(201, 184, 122, 0.08);
+      border: 1px solid rgba(201, 184, 122, 0.2);
+      border-radius: 20px;
+      font-size: 12px;
+      color: var(--proposed-moonbeam);
+      margin-bottom: 16px;
+    }
+
+    .theme-proposed .section-title {
+      font-size: 13px;
+      color: var(--proposed-moonbeam);
+      margin-bottom: 12px;
+      letter-spacing: 0.08em;
+    }
+
+    .theme-proposed .task-card {
+      background: var(--proposed-surface);
+      border: 1px solid rgba(201, 184, 122, 0.15);
+      border-radius: 16px;
+      padding: 16px;
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.25);
+    }
+
+    .theme-proposed .task-card h3 {
+      font-size: 16px;
+      color: var(--proposed-mist);
+      margin-bottom: 8px;
+    }
+
+    .theme-proposed .task-card p {
+      font-size: 13px;
+      color: var(--proposed-text-secondary);
+      line-height: 1.6;
+      margin-bottom: 12px;
+    }
+
+    .theme-proposed .btn {
+      padding: 10px 20px;
+      border-radius: 24px;
+      font-size: 14px;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .theme-proposed .btn-primary {
+      background: linear-gradient(135deg, var(--proposed-moonbeam), #a09060);
+      color: #070810;
+      box-shadow: 0 4px 16px rgba(201, 184, 122, 0.25);
+    }
+
+    .theme-proposed .btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 24px rgba(201, 184, 122, 0.35);
+    }
+
+    .theme-proposed .btn-secondary {
+      background: transparent;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: var(--proposed-text-secondary);
+    }
+
+    .theme-proposed .chips {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .theme-proposed .chip {
+      padding: 6px 12px;
+      border-radius: 16px;
+      font-size: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: var(--proposed-text-secondary);
+    }
+
+    .theme-proposed .chip.selected {
+      background: rgba(201, 184, 122, 0.12);
+      border-color: rgba(201, 184, 122, 0.3);
+      color: var(--proposed-moonbeam);
+    }
+
+    .theme-proposed .input {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 10px;
+      background: var(--proposed-mid);
+      color: var(--proposed-text);
+      font-size: 14px;
+      margin-top: 12px;
+      transition: all 0.2s ease;
+    }
+
+    .theme-proposed .input:focus {
+      outline: none;
+      border-color: rgba(201, 184, 122, 0.4);
+      box-shadow: 0 0 0 3px rgba(201, 184, 122, 0.08);
+    }
+
+    /* Alt Theme - Sage */
+    .theme-alt {
+      background: var(--alt-deep);
+    }
+
+    .theme-alt .card {
+      background: var(--alt-surface);
+      border: 1px solid rgba(255, 255, 255, 0.03);
+      border-radius: 16px;
+      padding: 18px;
+      margin-bottom: 14px;
+    }
+
+    .theme-alt .card.accent {
+      border-color: rgba(122, 158, 122, 0.3);
+      background: linear-gradient(145deg, var(--alt-surface), rgba(122, 158, 122, 0.03));
+    }
+
+    .theme-alt .moon-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: linear-gradient(145deg, var(--alt-accent), #5a7e5a);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 16px;
+      box-shadow: 0 0 30px rgba(122, 158, 122, 0.3);
+    }
+
+    .theme-alt .h1 {
+      font-size: 22px;
+      color: var(--alt-mist);
+      margin-bottom: 6px;
+    }
+
+    .theme-alt .text-secondary {
+      font-size: 13px;
+      color: rgba(232, 235, 230, 0.5);
+      margin-bottom: 20px;
+    }
+
+    .theme-alt .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      background: rgba(122, 158, 122, 0.1);
+      border: 1px solid rgba(122, 158, 122, 0.2);
+      border-radius: 20px;
+      font-size: 12px;
+      color: var(--alt-accent);
+      margin-bottom: 16px;
+    }
+
+    .theme-alt .section-title {
+      font-size: 13px;
+      color: var(--alt-accent);
+      margin-bottom: 12px;
+      letter-spacing: 0.08em;
+    }
+
+    .theme-alt .task-card {
+      background: var(--alt-surface);
+      border: 1px solid rgba(122, 158, 122, 0.15);
+      border-radius: 16px;
+      padding: 16px;
+    }
+
+    .theme-alt .task-card h3 {
+      font-size: 16px;
+      color: var(--alt-mist);
+      margin-bottom: 8px;
+    }
+
+    .theme-alt .task-card p {
+      font-size: 13px;
+      color: rgba(232, 235, 230, 0.5);
+      line-height: 1.6;
+      margin-bottom: 12px;
+    }
+
+    .theme-alt .btn-primary {
+      background: linear-gradient(135deg, var(--alt-accent), #5a7e5a);
+      color: #0a0d12;
+    }
+
+    .theme-alt .btn-secondary {
+      background: transparent;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: rgba(232, 235, 230, 0.5);
+    }
+
+    .theme-alt .chip {
+      padding: 6px 12px;
+      border-radius: 16px;
+      font-size: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: rgba(232, 235, 230, 0.5);
+    }
+
+    .theme-alt .chip.selected {
+      background: rgba(122, 158, 122, 0.15);
+      border-color: rgba(122, 158, 122, 0.35);
+      color: var(--alt-accent);
+    }
+
+    /* Warm Theme */
+    .theme-warm {
+      background: var(--warm-deep);
+    }
+
+    .theme-warm .card {
+      background: var(--warm-surface);
+      border: 1px solid rgba(255, 255, 255, 0.03);
+      border-radius: 16px;
+      padding: 18px;
+      margin-bottom: 14px;
+    }
+
+    .theme-warm .card.accent {
+      border-color: rgba(212, 168, 83, 0.3);
+      background: linear-gradient(145deg, var(--warm-surface), rgba(212, 168, 83, 0.03));
+    }
+
+    .theme-warm .moon-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: linear-gradient(145deg, var(--warm-moonbeam), #b08843);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 16px;
+      box-shadow: 0 0 30px rgba(212, 168, 83, 0.3);
+    }
+
+    .theme-warm .h1 {
+      font-size: 22px;
+      color: var(--warm-mist);
+      margin-bottom: 6px;
+    }
+
+    .theme-warm .text-secondary {
+      font-size: 13px;
+      color: rgba(240, 235, 227, 0.5);
+      margin-bottom: 20px;
+    }
+
+    .theme-warm .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      background: rgba(212, 168, 83, 0.1);
+      border: 1px solid rgba(212, 168, 83, 0.2);
+      border-radius: 20px;
+      font-size: 12px;
+      color: var(--warm-moonbeam);
+      margin-bottom: 16px;
+    }
+
+    .theme-warm .section-title {
+      font-size: 13px;
+      color: var(--warm-moonbeam);
+      margin-bottom: 12px;
+      letter-spacing: 0.08em;
+    }
+
+    .theme-warm .task-card {
+      background: var(--warm-surface);
+      border: 1px solid rgba(212, 168, 83, 0.15);
+      border-radius: 16px;
+      padding: 16px;
+    }
+
+    .theme-warm .task-card h3 {
+      font-size: 16px;
+      color: var(--warm-mist);
+      margin-bottom: 8px;
+    }
+
+    .theme-warm .task-card p {
+      font-size: 13px;
+      color: rgba(240, 235, 227, 0.5);
+      line-height: 1.6;
+      margin-bottom: 12px;
+    }
+
+    .theme-warm .btn-primary {
+      background: linear-gradient(135deg, var(--warm-moonbeam), #b08843);
+      color: #0c0a08;
+    }
+
+    .theme-warm .btn-secondary {
+      background: transparent;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: rgba(240, 235, 227, 0.5);
+    }
+
+    .theme-warm .chip {
+      padding: 6px 12px;
+      border-radius: 16px;
+      font-size: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: rgba(240, 235, 227, 0.5);
+    }
+
+    .theme-warm .chip.selected {
+      background: rgba(212, 168, 83, 0.15);
+      border-color: rgba(212, 168, 83, 0.35);
+      color: var(--warm-moonbeam);
+    }
+
+    .moon-svg { width: 24px; height: 24px; fill: currentColor; }
+
+    /* Color Swatches */
+    .swatch-row {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .swatch {
+      width: 24px;
+      height: 24px;
+      border-radius: 6px;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+  </style>
+</head>
+<body>
+  <h1>UI 优化预览 - 个人失眠顾问</h1>
+  <p class="subtitle">基于现有 "夜谧 Night Serenity" 主题的优化方向探索</p>
+
+  <div class="preview-grid">
+
+    <!-- Current Theme -->
+    <div class="preview-card">
+      <div class="preview-header">
+        <span>当前主题</span>
+        <span class="tag current">#0b1026</span>
+      </div>
+      <div class="preview-body theme-current">
+        <div class="moon-icon">
+          <svg class="moon-svg" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        </div>
+        <h2 class="h1">14 天改善计划</h2>
+        <p class="text-secondary">第 1 天 / 14 天</p>
+
+        <span class="badge">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+          睡眠卫生
+        </span>
+
+        <div class="task-card">
+          <h3>睡眠环境重置</h3>
+          <p>先减少光线、噪音和电子设备刺激，让卧室重新和睡眠建立关联。</p>
+          <p><strong>今日动作：</strong>今晚睡前整理床边环境，调暗灯光，把手机放到离床至少一臂之外的位置。</p>
+          <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <button class="btn btn-primary">完成今日任务</button>
+            <button class="btn btn-secondary">今天跳过</button>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top: 16px;">
+          <div class="section-title">选择场景</div>
+          <div class="chips">
+            <span class="chip selected">入睡困难</span>
+            <span class="chip">早醒</span>
+            <span class="chip">夜醒</span>
+          </div>
+          <input class="input" placeholder="咨询您的睡眠问题..." />
+        </div>
+
+        <div class="swatch-row">
+          <div class="swatch" style="background: #0b1026;"></div>
+          <div class="swatch" style="background: #131b36;"></div>
+          <div class="swatch" style="background: #1a2444;"></div>
+          <div class="swatch" style="background: #c4a76e;"></div>
+          <div class="swatch" style="background: #e8e0d4;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Proposed Theme - Refined -->
+    <div class="preview-card">
+      <div class="preview-header">
+        <span>优化方向 A</span>
+        <span class="tag proposed">更纯净深邃</span>
+      </div>
+      <div class="preview-body theme-proposed">
+        <div class="moon-icon">
+          <svg class="moon-svg" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        </div>
+        <h2 class="h1">14 天改善计划</h2>
+        <p class="text-secondary">第 1 天 / 14 天</p>
+
+        <span class="badge">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+          睡眠卫生
+        </span>
+
+        <div class="task-card">
+          <h3>睡眠环境重置</h3>
+          <p>先减少光线、噪音和电子设备刺激，让卧室重新和睡眠建立关联。</p>
+          <p><strong>今日动作：</strong>今晚睡前整理床边环境，调暗灯光，把手机放到离床至少一臂之外的位置。</p>
+          <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <button class="btn btn-primary">完成今日任务</button>
+            <button class="btn btn-secondary">今天跳过</button>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top: 16px;">
+          <div class="section-title">选择场景</div>
+          <div class="chips">
+            <span class="chip selected">入睡困难</span>
+            <span class="chip">早醒</span>
+            <span class="chip">夜醒</span>
+          </div>
+          <input class="input" placeholder="咨询您的睡眠问题..." />
+        </div>
+
+        <div class="swatch-row">
+          <div class="swatch" style="background: #070810;"></div>
+          <div class="swatch" style="background: #0d0f1c;"></div>
+          <div class="swatch" style="background: #131525;"></div>
+          <div class="swatch" style="background: #c9b87a;"></div>
+          <div class="swatch" style="background: #f0ebe3;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Alt Theme - Sage -->
+    <div class="preview-card">
+      <div class="preview-header">
+        <span>优化方向 B</span>
+        <span class="tag alt">自然绿点缀</span>
+      </div>
+      <div class="preview-body theme-alt">
+        <div class="moon-icon">
+          <svg class="moon-svg" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        </div>
+        <h2 class="h1">14 天改善计划</h2>
+        <p class="text-secondary">第 1 天 / 14 天</p>
+
+        <span class="badge">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+          睡眠卫生
+        </span>
+
+        <div class="task-card">
+          <h3>睡眠环境重置</h3>
+          <p>先减少光线、噪音和电子设备刺激，让卧室重新和睡眠建立关联。</p>
+          <p><strong>今日动作：</strong>今晚睡前整理床边环境，调暗灯光，把手机放到离床至少一臂之外的位置。</p>
+          <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <button class="btn btn-primary">完成今日任务</button>
+            <button class="btn btn-secondary">今天跳过</button>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top: 16px;">
+          <div class="section-title">选择场景</div>
+          <div class="chips">
+            <span class="chip selected">入睡困难</span>
+            <span class="chip">早醒</span>
+            <span class="chip">夜醒</span>
+          </div>
+          <input class="input" placeholder="咨询您的睡眠问题..." />
+        </div>
+
+        <div class="swatch-row">
+          <div class="swatch" style="background: #0a0d12;"></div>
+          <div class="swatch" style="background: #0f1318;"></div>
+          <div class="swatch" style="background: #161b22;"></div>
+          <div class="swatch" style="background: #7a9e7a;"></div>
+          <div class="swatch" style="background: #e8ebe6;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Warm Theme -->
+    <div class="preview-card">
+      <div class="preview-header">
+        <span>优化方向 C</span>
+        <span class="tag alt">暖色调</span>
+      </div>
+      <div class="preview-body theme-warm">
+        <div class="moon-icon">
+          <svg class="moon-svg" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        </div>
+        <h2 class="h1">14 天改善计划</h2>
+        <p class="text-secondary">第 1 天 / 14 天</p>
+
+        <span class="badge">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+          睡眠卫生
+        </span>
+
+        <div class="task-card">
+          <h3>睡眠环境重置</h3>
+          <p>先减少光线、噪音和电子设备刺激，让卧室重新和睡眠建立关联。</p>
+          <p><strong>今日动作：</strong>今晚睡前整理床边环境，调暗灯光，把手机放到离床至少一臂之外的位置。</p>
+          <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <button class="btn btn-primary">完成今日任务</button>
+            <button class="btn btn-secondary">今天跳过</button>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top: 16px;">
+          <div class="section-title">选择场景</div>
+          <div class="chips">
+            <span class="chip selected">入睡困难</span>
+            <span class="chip">早醒</span>
+            <span class="chip">夜醒</span>
+          </div>
+          <input class="input" placeholder="咨询您的睡眠问题..." />
+        </div>
+
+        <div class="swatch-row">
+          <div class="swatch" style="background: #0c0a08;"></div>
+          <div class="swatch" style="background: #141210;"></div>
+          <div class="swatch" style="background: #1c1916;"></div>
+          <div class="swatch" style="background: #d4a853;"></div>
+          <div class="swatch" style="background: #f5f0e8;"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div style="max-width: 1200px; margin: 48px auto 0; padding: 24px; background: rgba(255,255,255,0.03); border-radius: 16px;">
+    <h2 style="font-size: 18px; margin-bottom: 16px; color: #fff;">优化建议总结</h2>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; font-size: 14px; color: rgba(255,255,255,0.7); line-height: 1.8;">
+      <div>
+        <h3 style="color: #c4a76e; margin-bottom: 8px;">背景色优化</h3>
+        <p>当前 #0b1026 偏紫，建议改为 #070810 更纯净深邃，减少视觉疲劳</p>
+      </div>
+      <div>
+        <h3 style="color: #c4a76e; margin-bottom: 8px;">卡片层次</h3>
+        <p>增加阴影深度从单层到多层叠加，增加 glass-morphism 效果增强层次感</p>
+      </div>
+      <div>
+        <h3 style="color: #c4a76e; margin-bottom: 8px;">动效曲线</h3>
+        <p>统一使用 cubic-bezier(0.4, 0, 0.2, 1) 替代 ease，配合 micro-interactions</p>
+      </div>
+      <div>
+        <h3 style="color: #c4a76e; margin-bottom: 8px;">圆角系统</h3>
+        <p>增加 6px/32px 极端值，形成更清晰的圆角层级</p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

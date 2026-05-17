@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { type CSSProperties, useEffect, useRef, useState } from 'react';
 import { buildRelaxationSession, completeRelaxationSession, relaxationTools } from '../domain/relaxation';
 import { getRelaxationSessions, saveRelaxationSessions } from '../storage/localStore';
 import type { RelaxationSession } from '../domain/types';
@@ -12,6 +12,7 @@ export function RelaxationPage({ toolId, onBack }: { toolId: string; onBack: () 
   const elapsedRef = useRef(0);
   const totalSeconds = tool.steps.reduce((sum, step) => sum + step.durationSeconds, 0);
   const remainingSeconds = Math.max(totalSeconds - elapsedSeconds, 0);
+  const progressPercent = totalSeconds > 0 ? Math.min((elapsedSeconds / totalSeconds) * 100, 100) : 0;
   const currentStep =
     tool.steps.find((_, index) => {
       const end = tool.steps.slice(0, index + 1).reduce((sum, step) => sum + step.durationSeconds, 0);
@@ -70,7 +71,10 @@ export function RelaxationPage({ toolId, onBack }: { toolId: string; onBack: () 
         <p>{tool.description}</p>
         <p className="relaxation-hint">音频即将支持</p>
       </div>
-      <div className="relaxation-progress">
+      <div
+        className="relaxation-progress"
+        style={{ '--relaxation-progress': `${progressPercent}%` } as CSSProperties}
+      >
         <p>当前步骤：{currentStep.label}</p>
         <p className="timer-display">剩余 {remainingSeconds} 秒</p>
       </div>

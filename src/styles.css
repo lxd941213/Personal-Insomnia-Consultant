@@ -306,6 +306,8 @@ select:focus-visible,
 
 /* Card styles for ProfileWizard */
 .card {
+  position: relative;
+  z-index: 0;
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 16px;
@@ -520,6 +522,12 @@ select:focus-visible,
   cursor: not-allowed;
   transform: none;
   box-shadow: none;
+}
+
+.form-grid > .primary-button {
+  position: relative;
+  z-index: 5;
+  margin-top: 20px;
 }
 
 .fine-print {

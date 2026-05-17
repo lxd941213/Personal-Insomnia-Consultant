@@ -242,6 +242,19 @@ function latestLogsByDay(logs: DailyTaskLog[]): Map<number, DailyTaskLog> {
   return map;
 }
 
+function dateOnly(value: string): string {
+  return value.slice(0, 10);
+}
+
+function dayIndexFromDate(program: SleepProgram, today: string): number {
+  const start = new Date(`${dateOnly(program.startedAt)}T00:00:00`).getTime();
+  const current = new Date(`${today}T00:00:00`).getTime();
+  if (!Number.isFinite(start) || !Number.isFinite(current)) return program.currentDay;
+
+  const elapsedDays = Math.floor((current - start) / (24 * 60 * 60 * 1000));
+  return Math.min(Math.max(elapsedDays + 1, 1), template.length);
+}
+
 export function buildProgramStats(logs: DailyTaskLog[]): ProgramStats {
   const latest = Array.from(latestLogsByDay(logs).values()).sort((a, b) => a.day - b.day);
   const completedCount = latest.filter((entry) => entry.status === 'completed').length;
@@ -268,18 +281,10 @@ export function buildProgramStats(logs: DailyTaskLog[]): ProgramStats {
   };
 }
 
-function nextDayFromLogs(logs: DailyTaskLog[]): number {
-  const latest = latestLogsByDay(logs);
-  for (let day = 1; day <= template.length; day += 1) {
-    if (!latest.has(day)) return day;
-  }
-  return template.length;
-}
-
 export function resolveProgramState(input: ResolveProgramInput): ResolvedProgramState {
   const reasons = safetyReasons(input);
   const stats = buildProgramStats(input.logs);
-  const nextDay = nextDayFromLogs(input.logs);
+  const currentDay = dayIndexFromDate(input.program, input.today);
   const allDone = latestLogsByDay(input.logs).size >= template.length;
   const status: ProgramStatus = reasons.length > 0
     ? 'needs_care'
@@ -290,7 +295,7 @@ export function resolveProgramState(input: ResolveProgramInput): ResolvedProgram
         : 'active';
   const program: SleepProgram = {
     ...input.program,
-    currentDay: nextDay,
+    currentDay,
     status,
   };
   const latest = latestLogsByDay(input.logs);
@@ -298,7 +303,7 @@ export function resolveProgramState(input: ResolveProgramInput): ResolvedProgram
     let statusForTask: TaskStatus = 'locked';
     const log = latest.get(task.day);
     if (log) statusForTask = log.status;
-    else if (task.day === nextDay && status === 'active') statusForTask = 'today';
+    else if (task.day === currentDay && status === 'active') statusForTask = 'today';
     return { ...task, status: statusForTask };
   });
 

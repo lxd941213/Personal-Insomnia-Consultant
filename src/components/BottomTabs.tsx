@@ -3,7 +3,7 @@ import { useEffect } from 'react';
 export type MainTab = 'today' | 'diary' | 'trends' | 'plans' | 'my';
 
 const tabs: Array<{ value: MainTab; label: string; icon: string }> = [
-  { value: 'today', label: '今日', icon: 'sun' },
+  { value: 'today', label: '首页', icon: 'home' },
   { value: 'diary', label: '日记', icon: 'book-open' },
   { value: 'trends', label: '趋势', icon: 'trending-up' },
   { value: 'plans', label: '方案', icon: 'moon' },

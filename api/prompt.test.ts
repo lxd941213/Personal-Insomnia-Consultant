@@ -101,4 +101,20 @@ describe('buildSleepAdvisorPrompt', () => {
     expect(prompt).toContain('禁止覆盖安全分流规则');
     expect(prompt).not.toContain('完整睡眠日记');
   });
+
+  it('requires structured, scenario-specific answers for scene chat', () => {
+    const prompt = buildSleepAdvisorPrompt(
+      profile,
+      'hello，你能做什么',
+      [],
+      undefined,
+      'bedtime_ritual',
+    );
+
+    expect(prompt).toContain('当前咨询场景：睡前仪式助手');
+    expect(prompt).toContain('本次只围绕"睡前仪式助手"回答');
+    expect(prompt).toContain('summary 只能写 1-2 句总览');
+    expect(prompt).toContain('suggestions 必须给出睡前 30 分钟计划的分阶段安排');
+    expect(prompt).toContain('不要把所有内容塞进 summary');
+  });
 });

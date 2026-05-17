@@ -138,7 +138,6 @@ export default function App() {
             onOpenAssessment={() => setChildView('assessment')}
             onOpenKnowledge={openKnowledge}
             onOpenRelaxation={openRelaxation}
-            onOpenDiary={() => setActiveTab('diary')}
           />
         );
       case 'diary':

@@ -34,11 +34,11 @@ describe('App', () => {
 
     await user.click(screen.getByRole('button', { name: '创建睡眠档案' }));
     await user.selectOptions(screen.getByLabelText('年龄段'), '25-34岁');
-    await user.type(screen.getByLabelText('通常就寝时间'), '23:00');
-    await user.type(screen.getByLabelText('通常起床时间'), '07:00');
+    await user.type(screen.getByLabelText('就寝时间'), '23:00');
+    await user.type(screen.getByLabelText('起床时间'), '07:00');
     await user.selectOptions(screen.getByLabelText('问题持续时间'), '1-3个月');
     await user.selectOptions(screen.getByLabelText('压力水平'), '中等');
-    await user.type(screen.getByLabelText('白天影响'), '疲劳');
+    await user.type(screen.getByLabelText('白天影响（选填）'), '疲劳');
     await user.click(screen.getByRole('button', { name: '开始咨询' }));
 
     expect(screen.getByRole('heading', { name: '首页' })).toBeInTheDocument();
@@ -50,11 +50,11 @@ describe('App', () => {
 
     await user.click(screen.getByRole('button', { name: '创建睡眠档案' }));
     await user.selectOptions(screen.getByLabelText('年龄段'), '25-34岁');
-    await user.type(screen.getByLabelText('通常就寝时间'), '23:00');
-    await user.type(screen.getByLabelText('通常起床时间'), '07:00');
+    await user.type(screen.getByLabelText('就寝时间'), '23:00');
+    await user.type(screen.getByLabelText('起床时间'), '07:00');
     await user.selectOptions(screen.getByLabelText('问题持续时间'), '1-3个月');
     await user.selectOptions(screen.getByLabelText('压力水平'), '中等');
-    await user.type(screen.getByLabelText('白天影响'), '疲劳');
+    await user.type(screen.getByLabelText('白天影响（选填）'), '疲劳');
     await user.click(screen.getByRole('button', { name: '开始咨询' }));
 
     await user.click(screen.getByRole('button', { name: /入睡困难/ }));

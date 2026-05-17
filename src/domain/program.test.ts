@@ -125,6 +125,37 @@ describe('program domain', () => {
     expect(resolveTodayProgramTask(state).status).toBe('today');
   });
 
+  it('keeps the same program day after feedback is saved on the start date', () => {
+    const program = createSleepProgram({
+      profile: baseProfile,
+      assessmentResult: mildAssessment,
+      diarySummary: undefined,
+      now: new Date('2026-05-10T08:00:00.000Z'),
+    });
+
+    const sameDayState = resolveProgramState({
+      program,
+      profile: baseProfile,
+      assessmentResult: mildAssessment,
+      diarySummary: undefined,
+      logs: [log(1, 'completed', '2026-05-10')],
+      today: '2026-05-10',
+    });
+    const nextDayState = resolveProgramState({
+      program,
+      profile: baseProfile,
+      assessmentResult: mildAssessment,
+      diarySummary: undefined,
+      logs: [log(1, 'completed', '2026-05-10')],
+      today: '2026-05-11',
+    });
+
+    expect(sameDayState.program.currentDay).toBe(1);
+    expect(resolveTodayProgramTask(sameDayState).status).toBe('completed');
+    expect(nextDayState.program.currentDay).toBe(2);
+    expect(resolveTodayProgramTask(nextDayState).status).toBe('today');
+  });
+
   it('calculates streak, completion rate, and fallback recommendation', () => {
     const stats = buildProgramStats([log(1, 'completed'), log(2, 'skipped'), log(3, 'skipped')]);
 

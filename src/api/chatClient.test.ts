@@ -50,4 +50,27 @@ describe('sendChatMessage', () => {
     await expect(sendChatMessage({ profile, message: 'Help', history: [] }))
       .rejects.toThrow('Chat API failed with 500');
   });
+
+  it('passes an abort signal to fetch', async () => {
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        riskLevel: 'normal',
+        summary: 'Summary',
+        possibleFactors: [],
+        suggestions: [],
+        nextQuestions: [],
+        seekCareNotice: null,
+        disclaimer: 'This is for health management reference only and is not medical diagnosis.',
+      }),
+    });
+    vi.stubGlobal('fetch', mockFetch);
+    const controller = new AbortController();
+
+    await sendChatMessage({ profile, message: 'Help', history: [], signal: controller.signal });
+
+    expect(fetch).toHaveBeenCalledWith('/api/chat', expect.objectContaining({
+      signal: controller.signal,
+    }));
+  });
 });
