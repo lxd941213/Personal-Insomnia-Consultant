@@ -43,7 +43,7 @@ describe('DashboardPage', () => {
         onStartAssessment={vi.fn()}
         onOpenKnowledge={vi.fn()}
         onOpenChat={vi.fn()}
-        onReset={vi.fn()}
+        onOpenResetDrawer={vi.fn()}
       />,
     );
 
@@ -71,7 +71,7 @@ describe('DashboardPage', () => {
         onStartAssessment={vi.fn()}
         onOpenKnowledge={vi.fn()}
         onOpenChat={vi.fn()}
-        onReset={vi.fn()}
+        onOpenResetDrawer={vi.fn()}
       />,
     );
 
@@ -90,7 +90,7 @@ describe('DashboardPage', () => {
         onStartAssessment={vi.fn()}
         onOpenKnowledge={vi.fn()}
         onOpenChat={onOpenChat}
-        onReset={vi.fn()}
+        onOpenResetDrawer={vi.fn()}
       />,
     );
 
@@ -110,7 +110,7 @@ describe('DashboardPage', () => {
         onStartAssessment={onStartAssessment}
         onOpenKnowledge={vi.fn()}
         onOpenChat={vi.fn()}
-        onReset={vi.fn()}
+        onOpenResetDrawer={vi.fn()}
       />,
     );
 
@@ -119,9 +119,9 @@ describe('DashboardPage', () => {
     expect(onStartAssessment).toHaveBeenCalled();
   });
 
-  it('calls onReset when reset button is clicked', async () => {
+  it('calls onOpenResetDrawer when reset button is clicked', async () => {
     const user = userEvent.setup();
-    const onReset = vi.fn();
+    const onOpenResetDrawer = vi.fn();
 
     render(
       <DashboardPage
@@ -130,12 +130,12 @@ describe('DashboardPage', () => {
         onStartAssessment={vi.fn()}
         onOpenKnowledge={vi.fn()}
         onOpenChat={vi.fn()}
-        onReset={onReset}
+        onOpenResetDrawer={onOpenResetDrawer}
       />,
     );
 
     await user.click(screen.getByRole('button', { name: '重置档案' }));
 
-    expect(onReset).toHaveBeenCalled();
+    expect(onOpenResetDrawer).toHaveBeenCalled();
   });
 });
