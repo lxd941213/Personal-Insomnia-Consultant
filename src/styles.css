@@ -2590,8 +2590,14 @@ select:focus-visible,
   line-height: 1.6;
 }
 
-.plan-reason {
+.plan-reason-block,
+.plan-reason,
+.plan-action-preview {
   margin: 0;
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.035);
+  padding: 12px;
 }
 
 .plan-reason-label {
@@ -2603,15 +2609,18 @@ select:focus-visible,
 .plan-reason-text {
   color: var(--text-secondary);
   font-size: 13px;
+  line-height: 1.7;
 }
 
 .plan-safety-note {
+  margin: 0;
   color: var(--high-risk-text);
   font-size: 12px;
   background: var(--high-risk-bg);
-  padding: 8px 10px;
-  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--high-risk-border);
+  line-height: 1.65;
 }
 
 .compact-plan-list,
@@ -2621,29 +2630,79 @@ select:focus-visible,
   gap: 10px;
 }
 
+.compact-plan-list {
+  gap: 8px;
+}
+
+.plan-library-list {
+  gap: 12px;
+}
+
 .plan-step-list {
-  margin: 8px 0 0;
+  margin: 0;
   padding-left: 20px;
   color: var(--text-secondary);
   font-size: 13px;
-  line-height: 1.8;
+  line-height: 1.75;
+}
+
+.plan-step-list li + li {
+  margin-top: 4px;
+}
+
+.program-summary-row,
+.program-preview-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.program-summary-row {
+  padding: 10px 12px;
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.035);
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.program-preview-item,
+.plan-card-featured > .timeline-item {
+  padding: 12px;
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.program-preview-item.today,
+.plan-card-featured > .timeline-item.today {
+  border-color: var(--card-border-strong);
+  background:
+    linear-gradient(145deg, rgba(201, 184, 122, 0.13), rgba(255, 255, 255, 0.035));
+  box-shadow: inset 0 1px 0 rgba(201, 184, 122, 0.12);
+}
+
+.plan-card-featured > .timeline-item::before {
+  display: none;
 }
 
 /* ─── Category group (accordion) ─── */
 
 .category-group {
-  border: 1px solid rgba(168, 180, 214, 0.08);
+  border: 1px solid var(--card-border);
   border-radius: var(--radius-md);
-  background: var(--night-surface);
+  background: rgba(255, 255, 255, 0.03);
   overflow: hidden;
 }
 
 .category-header {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1.2fr) 16px;
   align-items: center;
+  gap: 10px;
   width: 100%;
-  padding: 14px 16px;
+  padding: 14px;
   border: 0;
   background: transparent;
   color: inherit;
@@ -2679,19 +2738,23 @@ select:focus-visible,
 .category-header .category-count {
   font-size: 12px;
   color: var(--text-muted);
-  margin-left: 8px;
+  white-space: nowrap;
 }
 
 .category-tag-preview {
-  margin-left: 8px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font-size: 12px;
   color: var(--text-muted);
 }
 
 .category-header .chevron {
+  display: inline-flex;
+  justify-content: center;
   font-size: 12px;
   color: var(--text-muted);
-  margin-left: auto;
   transition: transform 0.2s ease;
 }
 
@@ -2702,8 +2765,8 @@ select:focus-visible,
 .category-body {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 0 16px 16px;
+  gap: 10px;
+  padding: 0 14px 14px;
 }
 
 /* ─── Knowledge card refined ─── */
@@ -2955,6 +3018,54 @@ select:focus-visible,
   color: var(--mist);
 }
 
+.priority-plan-card,
+.program-overview-card,
+.plans-page-refined > section .plan-card-featured {
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-lg);
+  background:
+    radial-gradient(circle at 92% 0%, rgba(201, 184, 122, 0.12), transparent 36%),
+    linear-gradient(145deg, rgba(19, 21, 37, 0.96), rgba(22, 28, 42, 0.92));
+  box-shadow: var(--shadow-soft), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.program-overview-card.high-risk,
+.program-overview-card.high-risk .plan-safety-note {
+  border-color: var(--high-risk-border);
+  background: var(--high-risk-bg);
+}
+
+.priority-plan-heading {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.priority-plan-heading h3,
+.priority-plan-card h3,
+.program-overview-card h3,
+.plans-page-refined > section .plan-card-featured h3 {
+  margin: 0;
+  color: var(--mist);
+  font-family: 'Noto Serif SC', serif;
+  font-size: 18px;
+  line-height: 1.35;
+}
+
+.section-kicker,
+.plans-page-refined > section .plan-card-featured > .fine-print:first-child {
+  margin: 0;
+  color: var(--moonbeam);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-align: left;
+}
+
 .plan-card-featured {
   background: linear-gradient(145deg, var(--night-surface), var(--night-elevated));
   border-radius: var(--radius-md);
@@ -3002,11 +3113,49 @@ select:focus-visible,
   padding-left: 10px;
 }
 
+.plans-page-refined > section .plan-card-featured p {
+  padding-left: 0;
+}
+
 .reason-tags {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
   padding-left: 10px;
+}
+
+.compact-plan-card,
+.compact-plan-list .plan-card-plain {
+  border: 1px solid rgba(168, 180, 214, 0.08);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.03);
+  padding: 12px 14px;
+  gap: 7px;
+  box-shadow: none;
+}
+
+.compact-plan-card h3,
+.compact-plan-list .plan-card-plain h3 {
+  margin: 0;
+  color: var(--mist);
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.compact-plan-card p,
+.compact-plan-list .plan-card-plain p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.65;
+}
+
+.compact-reason,
+.compact-plan-list .fine-print {
+  color: var(--text-muted);
+  font-size: 11px;
+  line-height: 1.55;
+  text-align: left;
 }
 
 .plan-card-plain {
