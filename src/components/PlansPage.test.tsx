@@ -1,13 +1,17 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { PlansPage } from './PlansPage';
-import type { AssessmentResult, SleepDiaryEntry, SleepProfile } from '../domain/types';
+import type { AssessmentResult, DailyTaskLog, SleepDiaryEntry, SleepProfile } from '../domain/types';
+
+const storageMock = vi.hoisted(() => ({
+  dailyTaskLogs: [] as DailyTaskLog[],
+}));
 
 vi.mock('../storage/localStore', () => ({
   getDiaryEntries: (): SleepDiaryEntry[] => [],
   getSleepProgram: vi.fn(() => null),
-  getDailyTaskLogs: vi.fn(() => []),
+  getDailyTaskLogs: vi.fn(() => storageMock.dailyTaskLogs),
   saveSleepProgram: vi.fn(),
 }));
 
@@ -33,6 +37,10 @@ const assessmentResult: AssessmentResult = {
 };
 
 describe('PlansPage', () => {
+  beforeEach(() => {
+    storageMock.dailyTaskLogs = [];
+  });
+
   it('renders a current priority recommendation with visible reasons', () => {
     render(<PlansPage profile={profile} assessmentResult={assessmentResult} />);
 
@@ -56,6 +64,32 @@ describe('PlansPage', () => {
     expect(screen.getByText(/第14天：第 2 周复盘和下一步/)).toBeInTheDocument();
     expect(screen.getAllByText('CBT-I').length).toBeGreaterThan(0);
     expect(screen.getAllByText('睡眠卫生').length).toBeGreaterThan(0);
+  });
+
+  it('uses completed styling for the compact today preview when day 1 is completed', () => {
+    storageMock.dailyTaskLogs = [{
+      id: 'log-1',
+      programId: 'program-1',
+      day: 1,
+      date: '2026-05-18',
+      status: 'completed',
+      difficulty: 'ok',
+      sleepQuality: 6,
+      sleepLatencyMinutes: 30,
+      awakenings: 1,
+      daytimeEnergy: '一般',
+      note: '',
+      createdAt: '2026-05-18T08:00:00.000Z',
+      updatedAt: '2026-05-18T08:00:00.000Z',
+      version: 1,
+    }];
+
+    render(<PlansPage profile={profile} assessmentResult={assessmentResult} />);
+
+    const todayPreview = screen.getByText('今日任务').closest('.program-preview-item');
+
+    expect(todayPreview).toHaveClass('completed');
+    expect(todayPreview).not.toHaveClass('today');
   });
 
   it('keeps plan library categories collapsed until opened', async () => {

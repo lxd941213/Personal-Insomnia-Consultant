@@ -225,7 +225,7 @@ function ProgramOverview({
         </div>
         <div className="program-preview-list">
           {todayTask && (
-            <div className="program-preview-item today">
+            <div className={`program-preview-item ${todayTask.status}`}>
               <div className="program-task-meta">
                 <span className="evidence-label">今日任务</span>
                 <span className="task-status-label">{todayTask.status}</span>

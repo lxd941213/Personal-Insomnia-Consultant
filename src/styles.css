@@ -3607,6 +3607,7 @@ select:focus-visible,
 }
 
 .task-check.completed,
+.program-preview-item.completed,
 .program-timeline .timeline-item.completed {
   border-color: var(--success-border);
   background: var(--success-bg);
@@ -3617,6 +3618,7 @@ select:focus-visible,
   border-color: var(--success-border);
 }
 
+.program-preview-item.skipped,
 .program-timeline .timeline-item.skipped {
   border-color: var(--warning-border);
   background: var(--warning-bg);
