@@ -219,20 +219,33 @@ function ProgramOverview({
         <span className="section-count">第 {programState.program.currentDay} 天 / 14 天</span>
       </div>
       <article className="plan-card-featured">
-        <h3>当前进度</h3>
-        <p>已完成 {programState.stats.completedCount} 个任务，跳过 {programState.stats.skippedCount} 个任务，完成率 {programState.stats.completionRate}%。</p>
-        {todayTask && (
-          <div className="timeline-item today">
-            <div className="program-task-meta">
-              <span className="evidence-label">{todayTask.evidenceLabel}</span>
-              <span className="task-status-label">{todayTask.status}</span>
+        <div className="program-summary-row">
+          <h3>当前进度</h3>
+          <p>已完成 {programState.stats.completedCount} 个任务，跳过 {programState.stats.skippedCount} 个任务，完成率 {programState.stats.completionRate}%。</p>
+        </div>
+        <div className="program-preview-list">
+          {todayTask && (
+            <div className="program-preview-item today">
+              <div className="program-task-meta">
+                <span className="evidence-label">今日任务</span>
+                <span className="task-status-label">{todayTask.status}</span>
+              </div>
+              <h4>第{todayTask.day}天：{todayTask.title}</h4>
+              <p>{todayTask.rationale}</p>
+              <p><strong>动作：</strong>{todayTask.action}</p>
             </div>
-            <h4>今日任务</h4>
-            <p>{todayTask.title}</p>
-            <p><strong>动作：</strong>{todayTask.action}</p>
-          </div>
-        )}
-        {nextTask && <p className="fine-print">下一步：第{nextTask.day}天：{nextTask.title}</p>}
+          )}
+          {nextTask && (
+            <div className="program-preview-item">
+              <div className="program-task-meta">
+                <span className="evidence-label">下一步</span>
+                <span className="task-status-label">{nextTask.evidenceLabel}</span>
+              </div>
+              <h4>第{nextTask.day}天：{nextTask.title}</h4>
+              <p>{nextTask.rationale}</p>
+            </div>
+          )}
+        </div>
         <button
           type="button"
           className="collapse-toggle"

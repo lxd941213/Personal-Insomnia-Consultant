@@ -2667,12 +2667,20 @@ select:focus-visible,
   line-height: 1.6;
 }
 
+.program-summary-row h3,
+.program-preview-item h4 {
+  margin: 0;
+}
+
 .program-preview-item,
 .plan-card-featured > .timeline-item {
   padding: 12px;
   border: 1px solid var(--card-border);
   border-radius: var(--radius-md);
   background: rgba(255, 255, 255, 0.035);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .program-preview-item.today,
