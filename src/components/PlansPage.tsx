@@ -3,7 +3,7 @@ import { sleepPlans, recommendSleepPlans } from '../domain/sleepPlans';
 import { summarizeRecentDiary } from '../domain/sleepDiary';
 import { createSleepProgram, resolveProgramState } from '../domain/program';
 import { getDailyTaskLogs, getDiaryEntries, getSleepProgram, saveSleepProgram } from '../storage/localStore';
-import type { AssessmentResult, PlanRecommendation, ProgramTask, SleepPlan, SleepPlanCategory } from '../domain/types';
+import type { AssessmentResult, PlanRecommendation, ProgramTask, SleepPlan, SleepPlanCategory, TaskStatus } from '../domain/types';
 import type { SleepProfile } from '../domain/types';
 
 const categoryLabels: Record<SleepPlanCategory, string> = {
@@ -53,7 +53,9 @@ function representativeTags(plans: SleepPlan[]): string[] {
   return Array.from(new Set(plans.flatMap((plan) => plan.tags))).slice(0, 3);
 }
 
-function nextUpcomingTask(tasks: Array<ProgramTask & { status: string }>, currentDay: number) {
+type ResolvedProgramTask = ProgramTask & { status: TaskStatus };
+
+function nextUpcomingTask(tasks: ResolvedProgramTask[], currentDay: number) {
   return tasks.find((task) => task.day > currentDay && task.status === 'locked')
     ?? tasks.find((task) => task.day > currentDay);
 }
@@ -72,7 +74,7 @@ function PlanStepList({ steps }: { steps: string[] }) {
 
 function SafetyNote({ children }: { children: string }) {
   return (
-    <p style={{ color: 'var(--high-risk-text)', fontSize: '12px', background: 'var(--high-risk-bg)', padding: '8px 10px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--high-risk-border)' }}>
+    <p className="plan-safety-note">
       {children}
     </p>
   );
@@ -105,9 +107,9 @@ function PriorityPlanCard({
       <h3>{plan.title}</h3>
       <p>{plan.summary}</p>
       {recommendation.reasons.length > 0 && (
-        <p>
-          <span style={{ color: 'var(--moonbeam)', fontSize: '12px', fontWeight: 600 }}>推荐理由：</span>
-          <span style={{ color: 'var(--text-secondary)', fontSize: '13px' }}>
+        <p className="plan-reason">
+          <span className="plan-reason-label">推荐理由：</span>
+          <span className="plan-reason-text">
             {summarizeReasons(recommendation.reasons)}
           </span>
         </p>
@@ -150,7 +152,7 @@ function CompactRecommendationList({
         <h2>其他推荐</h2>
         <span className="section-count">{items.length} 个</span>
       </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+      <div className="compact-plan-list">
         {items.map(({ recommendation, plan }) => {
           const isExpanded = expandedPlans.has(plan.id);
           return (
@@ -276,7 +278,7 @@ function PlanLibraryAccordion({
         <h2>全部方案</h2>
         <span className="section-count">{planCount} 个</span>
       </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+      <div className="plan-library-list">
         {grouped.map(({ category, label, plans }) => {
           const isExpanded = expandedCategories.has(category);
           return (
@@ -287,17 +289,15 @@ function PlanLibraryAccordion({
                 onClick={() => onToggle(category)}
                 aria-expanded={isExpanded}
               >
-                <div>
-                  <h3>{label}</h3>
-                  <span className="category-count">{plans.length} 个方案</span>
-                  <span className="fine-print">{representativeTags(plans).join(' / ')}</span>
-                </div>
+                <span className="category-label">{label}</span>
+                <span className="category-count">{plans.length} 个方案</span>
+                <span className="category-tag-preview">{representativeTags(plans).join(' / ')}</span>
                 <span className="chevron">▼</span>
               </button>
               {isExpanded && (
                 <div className="collapse-content open">
                   <div className="collapse-inner">
-                    <div className="category-body" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <div className="category-body">
                       {plans.map((plan) => (
                         <div key={plan.id} className="plan-card-plain">
                           <h4>{plan.title}</h4>
