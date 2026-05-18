@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { PlansPage } from './PlansPage';
 import type { AssessmentResult, SleepDiaryEntry, SleepProfile } from '../domain/types';
@@ -32,23 +33,44 @@ const assessmentResult: AssessmentResult = {
 };
 
 describe('PlansPage', () => {
-  it('renders recommended plans with reasons', () => {
+  it('renders a current priority recommendation with visible reasons', () => {
     render(<PlansPage profile={profile} assessmentResult={assessmentResult} />);
-    expect(screen.getByText('推荐方案')).toBeInTheDocument();
+
+    expect(screen.getByText('当前优先方案')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: '固定起床时间' })).toBeInTheDocument();
     expect(screen.getAllByText(/推荐理由/).length).toBeGreaterThan(0);
+    expect(screen.getByText(/今晚先做/)).toBeInTheDocument();
   });
 
-  it('renders the 14-day program timeline with evidence labels', () => {
+  it('keeps the full 14-day timeline collapsed until requested', async () => {
+    const user = userEvent.setup();
     render(<PlansPage profile={profile} assessmentResult={assessmentResult} />);
 
     expect(screen.getByText('14天改善计划')).toBeInTheDocument();
-    expect(screen.getByText(/第1天：睡眠环境重置/)).toBeInTheDocument();
+    expect(screen.getByText(/第 1 天 \/ 14 天/)).toBeInTheDocument();
+    expect(screen.getByText(/今日任务/)).toBeInTheDocument();
+    expect(screen.queryByText(/第14天：第 2 周复盘和下一步/)).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: '查看全部 14 天' }));
+
     expect(screen.getByText(/第14天：第 2 周复盘和下一步/)).toBeInTheDocument();
     expect(screen.getAllByText('CBT-I').length).toBeGreaterThan(0);
     expect(screen.getAllByText('睡眠卫生').length).toBeGreaterThan(0);
   });
 
-  it('shows professional evaluation guidance instead of timeline actions when care should come first', () => {
+  it('keeps plan library categories collapsed until opened', async () => {
+    const user = userEvent.setup();
+    render(<PlansPage profile={profile} assessmentResult={assessmentResult} />);
+
+    expect(screen.getByText('全部方案')).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: '咖啡因边界' })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /饮食营养/ }));
+
+    expect(screen.getByRole('heading', { name: '咖啡因边界' })).toBeInTheDocument();
+  });
+
+  it('shows professional evaluation guidance instead of ordinary timeline actions when care should come first', () => {
     render(
       <PlansPage
         profile={{ ...profile, safetySignals: ['疑似睡眠呼吸暂停'] }}
@@ -57,6 +79,7 @@ describe('PlansPage', () => {
     );
 
     expect(screen.getAllByText('优先进行专业评估').length).toBeGreaterThan(0);
+    expect(screen.getByText('当前优先方案')).toBeInTheDocument();
     expect(screen.queryByText(/第1天：睡眠环境重置/)).not.toBeInTheDocument();
   });
 });
