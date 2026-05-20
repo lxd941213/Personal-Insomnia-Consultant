@@ -33,7 +33,7 @@ test('shows all quick consultation modules without horizontal clipping', async (
     cardCount: node.querySelectorAll('.scenario-card-compact').length,
   }));
 
-  expect(layout.cardCount).toBe(9);
+  expect(layout.cardCount).toBe(8);
   expect(layout.scrollWidth).toBeLessThanOrEqual(layout.clientWidth + 1);
 });
 

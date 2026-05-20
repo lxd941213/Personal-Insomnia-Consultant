@@ -2,6 +2,22 @@ import { expect, test } from '@playwright/test';
 
 test('user can create profile, complete assessment, generate knowledge cards, and chat', async ({ page }) => {
   await page.route('/api/chat', async (route) => {
+    const body = route.request().postDataJSON() as { message?: string } | null;
+    if (body?.message?.includes('不想活')) {
+      await route.fulfill({
+        json: {
+          riskLevel: 'high_risk',
+          summary: '你的描述包含需要优先关注的安全信号。',
+          possibleFactors: ['存在需要专业评估的风险信号'],
+          suggestions: [{ title: '优先寻求专业支持', detail: '请立即联系当地急救电话，前往就近急诊或精神心理急诊。' }],
+          nextQuestions: [],
+          seekCareNotice: '若存在伤害自己或其他急性危险，请立即联系当地急救电话，前往就近急诊或精神心理急诊，并请身边可信任的人陪伴。',
+          disclaimer: '本内容仅供健康管理参考，不作为医疗诊断。',
+        },
+      });
+      return;
+    }
+
     await route.fulfill({
       json: {
         riskLevel: 'normal',
@@ -90,20 +106,63 @@ test('user can create profile, complete assessment, generate knowledge cards, an
 
   await expect(page.getByText(/根据您的情况/)).toBeVisible();
   await expect(page.getByRole('button', { name: '有用' })).toBeVisible();
+  await page.getByPlaceholder('咨询入睡困难相关问题...').fill('我不想活了，连续很多天睡不着');
+  await page.getByRole('button', { name: '发送' }).click();
+  await expect(page.getByText('请立即联系当地急救电话，前往就近急诊或精神心理急诊。')).toBeVisible();
   await page.getByRole('button', { name: '返回' }).click();
 
   // Sleep enhancement: diary, trend, and plan
   await page.getByRole('button', { name: '日记' }).click();
   await expect(page.getByRole('heading', { name: '睡眠日记' })).toBeVisible();
-  await page.getByLabel('睡前情绪').fill('平静');
+  await page.getByRole('button', { name: '平静' }).click();
   await page.getByRole('button', { name: '保存睡前记录' }).click();
   await page.getByRole('button', { name: /起床记录/ }).click();
   await page.getByLabel('入睡时间').fill('23:40');
   await page.getByLabel('起床时间').fill('07:10');
-  await page.getByLabel('入睡耗时').fill('35');
+  await page.getByRole('button', { name: '31-60分钟' }).click();
   await page.getByRole('button', { name: '保存起床记录' }).click();
   await page.getByRole('button', { name: '趋势' }).click();
-  await expect(page.getByRole('heading', { name: '近 7 天' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: '睡眠趋势' })).toBeVisible();
   await page.getByRole('button', { name: '方案' }).click();
-  await expect(page.getByText('推荐方案')).toBeVisible();
+  await expect(page.getByRole('heading', { name: '助眠方案' })).toBeVisible();
+  await page.getByRole('button', { name: '完成今日任务' }).click();
+  await page.getByRole('button', { name: '一般' }).first().click();
+  await page.getByRole('button', { name: '较好' }).click();
+  await page.getByRole('button', { name: '16-30分钟' }).click();
+  await page.getByRole('button', { name: '1次' }).click();
+  await page.getByLabel('白天精力').fill('还可以');
+  await page.getByRole('button', { name: '保存任务反馈' }).click();
+  await expect(page.getByText(/已完成 1 个任务/)).toBeVisible();
+});
+
+test('urgent Chinese risk message shows deterministic care guidance', async ({ page }) => {
+  await page.goto('/');
+  await page.evaluate(() => {
+    window.localStorage.setItem('sleepProfile', JSON.stringify({
+      ageRange: '25-34岁',
+      bedtime: '23:00',
+      wakeTime: '07:00',
+      mainConcern: 'hard_to_fall_asleep',
+      concernDuration: '1-3个月',
+      stressLevel: '中等',
+      habits: [],
+      daytimeImpact: '白天疲惫',
+      safetySignals: [],
+      optionalContext: '',
+    }));
+  });
+  await page.reload();
+  await expect(page.getByRole('heading', { name: '首页' })).toBeVisible();
+
+  // Open chat via scenario card
+  await page.getByRole('button', { name: /入睡困难/ }).first().click();
+  await expect(page.getByRole('heading', { name: '入睡困难' })).toBeVisible();
+
+  // Send urgent Chinese risk message
+  await page.getByPlaceholder('咨询入睡困难相关问题...').fill('我不想活了，睡不着已经很久了');
+  await page.getByRole('button', { name: '发送' }).click();
+
+  // Verify deterministic safety guidance
+  await expect(page.getByText('当地急救').first()).toBeVisible();
+  await expect(page.getByRole('alert').getByText('本内容仅提供健康管理参考，不作为医疗诊断。')).toBeVisible();
 });
