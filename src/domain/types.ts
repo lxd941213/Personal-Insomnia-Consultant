@@ -1,5 +1,53 @@
 export type RiskLevel = 'normal' | 'high_risk';
 
+export type SafetyTriageLevel = 'normal' | 'needs_care' | 'urgent';
+
+export type SafetyTriageCategory =
+  | 'self_harm'
+  | 'sleep_apnea'
+  | 'chest_pain_or_breathing'
+  | 'medication_or_alcohol_dependence'
+  | 'pregnancy_or_postpartum'
+  | 'severe_insomnia_impairment'
+  | 'major_medical_condition';
+
+export interface SafetyTriageResult {
+  level: SafetyTriageLevel;
+  reasons: string[];
+  categories: SafetyTriageCategory[];
+  shouldBlockAi: boolean;
+  careNotice: string | null;
+}
+
+export interface SafetyTriageInput {
+  profile?: SleepProfile | null;
+  message?: string;
+  assessmentResult?: AssessmentResult | null;
+  diaryNotes?: string[];
+}
+
+export interface UserSleepContext {
+  profile: SleepProfile;
+  assessmentResult: AssessmentResult | null;
+  diarySummary: ConsultationDiarySummary | null;
+  program: SleepProgram | null;
+  taskLogs: DailyTaskLog[];
+  message: string;
+  safetyTriage: SafetyTriageResult;
+}
+
+export interface CareAction {
+  label: string;
+  detail: string;
+}
+
+export interface SafetyDisplayCopy {
+  title: string;
+  summary: string;
+  actions: CareAction[];
+  disclaimer: string;
+}
+
 export type MainConcern =
   | 'hard_to_fall_asleep'
   | 'early_waking'
@@ -76,6 +124,19 @@ export type SleepScenario =
 export type IsiLevel = 'none' | 'mild' | 'moderate' | 'severe';
 export type PsqiLevel = 'good' | 'fair' | 'poor';
 
+export interface AssessmentUncertainItem {
+  group: 'isi' | 'psqiLite';
+  questionId: number;
+  fallbackValue: number;
+}
+
+export interface AssessmentResponseQuality {
+  confidence: 'standard' | 'estimated';
+  uncertainCount: number;
+  uncertainItems: AssessmentUncertainItem[];
+  note: string;
+}
+
 export interface AssessmentResult {
   completedAt: string;
   isi: {
@@ -91,6 +152,7 @@ export interface AssessmentResult {
     summary: string;
   };
   riskFlags: string[];
+  responseQuality?: AssessmentResponseQuality;
 }
 
 export interface KnowledgeCard {
@@ -151,6 +213,16 @@ export interface DiarySummary {
   averageSleepQuality: number | null;
 }
 
+export interface ConsultationDiarySummary extends DiarySummary {
+  daysWindow: number;
+  dateRange: {
+    from: string;
+    to: string;
+  };
+  recentFactors: string[];
+  recentNotes: string[];
+}
+
 export interface ReminderSettings extends SyncRecord {
   bedtimeEnabled: boolean;
   bedtimeTime: string;
@@ -175,6 +247,14 @@ export interface RelaxationStep {
   durationSeconds: number;
 }
 
+export interface RelaxationAudioTrack {
+  id: string;
+  title: string;
+  description: string;
+  durationMinutes: number;
+  soundscape: 'rain' | 'ocean' | 'soft-tone';
+}
+
 export interface RelaxationTool {
   id: string;
   title: string;
@@ -182,7 +262,8 @@ export interface RelaxationTool {
   estimatedMinutes: number;
   steps: RelaxationStep[];
   audioUrl: string | null;
-  audioState: 'unavailable';
+  audioState: 'available' | 'unavailable';
+  audioTracks?: RelaxationAudioTrack[];
 }
 
 export type SleepPlanCategory = 'cbti' | 'schedule' | 'relaxation' | 'nutrition' | 'wellness' | 'safety';
