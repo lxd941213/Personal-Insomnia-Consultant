@@ -62,6 +62,40 @@ describe('chat api', () => {
     expect(res.body).toMatchObject({ riskLevel: 'high_risk' });
   });
 
+  it('short-circuits Chinese urgent safety messages with local emergency guidance', async () => {
+    vi.mocked(callAiProvider).mockClear();
+    const res = mockRes();
+
+    await handler({
+      method: 'POST',
+      body: { profile, message: '我不想活了，已经连续很多天睡不着', history: [] },
+    } as never, res as never);
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toMatchObject({
+      riskLevel: 'high_risk',
+      seekCareNotice: expect.stringContaining('当地急救'),
+    });
+    expect(callAiProvider).not.toHaveBeenCalled();
+  });
+
+  it('keeps non-urgent profile safety signals in the provider prompt', async () => {
+    vi.mocked(callAiProvider).mockClear();
+    const res = mockRes();
+
+    await handler({
+      method: 'POST',
+      body: {
+        profile: { ...profile, safetySignals: ['疑似睡眠呼吸暂停'] },
+        message: '我应该怎么记录睡眠？',
+        history: [],
+      },
+    } as never, res as never);
+
+    expect(res.statusCode).toBe(200);
+    expect(callAiProvider).toHaveBeenCalledTimes(1);
+  });
+
   it('returns safe fallback for malformed JSON response', async () => {
     vi.mocked(callAiProvider).mockResolvedValueOnce({ content: 'not valid json' });
     const res = mockRes();
@@ -251,6 +285,50 @@ describe('chat api', () => {
     expect(capturedPrompt).toContain('ISI：8 分');
   });
 
+  it('includes diary summary in prompt and personalization when provided', async () => {
+    let capturedPrompt = '';
+    vi.mocked(callAiProvider).mockImplementation(async (prompt: string) => {
+      capturedPrompt = prompt;
+      return {
+        content: JSON.stringify({
+          riskLevel: 'normal',
+          summary: 'Test response',
+          possibleFactors: [],
+          suggestions: [],
+          nextQuestions: [],
+          seekCareNotice: null,
+          disclaimer: 'Test',
+        }),
+      };
+    });
+
+    const res = mockRes();
+    await handler({
+      method: 'POST',
+      body: {
+        profile: { ...profile, daytimeImpact: '工作时明显疲惫' },
+        message: '请结合我最近几天的睡眠情况',
+        history: [],
+        diarySummary: {
+          entryCount: 2,
+          daysWindow: 7,
+          dateRange: { from: '2026-05-13', to: '2026-05-19' },
+          averageSleepDurationMinutes: 280,
+          averageSleepLatencyMinutes: 65,
+          averageAwakenings: 3,
+          averageSleepQuality: 2,
+          recentFactors: ['睡前刷手机'],
+          recentNotes: ['凌晨醒了几次'],
+        },
+      },
+    } as never, res as never);
+
+    expect(res.statusCode).toBe(200);
+    expect(capturedPrompt).toContain('最近 7 天睡眠日记摘要');
+    expect(capturedPrompt).toContain('睡眠时长明显不足且伴随白天影响');
+    expect(capturedPrompt).toContain('凌晨醒了几次');
+  });
+
   it('includes hidden scene context in prompt when provided', async () => {
     let capturedPrompt = '';
     vi.mocked(callAiProvider).mockImplementation(async (prompt: string) => {
@@ -277,5 +355,36 @@ describe('chat api', () => {
     expect(res.statusCode).toBe(200);
     expect(capturedPrompt).toContain('当前咨询场景：入睡困难');
     expect(capturedPrompt).toContain('难以在合理时间内入睡');
+  });
+
+  it('short-circuits urgent Chinese risk before provider call', async () => {
+    vi.mocked(callAiProvider).mockClear();
+    const res = mockRes();
+
+    await handler({
+      method: 'POST',
+      body: { profile, message: '我不想活了，可能会伤害自己', history: [] },
+    } as never, res as never);
+
+    expect(res.statusCode).toBe(200);
+    expect(JSON.stringify(res.body)).toContain('当地急救');
+    expect(callAiProvider).not.toHaveBeenCalled();
+  });
+
+  it('passes needs-care safety context into provider prompt', async () => {
+    vi.mocked(callAiProvider).mockClear();
+    const res = mockRes();
+
+    await handler({
+      method: 'POST',
+      body: {
+        profile: { ...profile, safetySignals: ['疑似睡眠呼吸暂停'] },
+        message: '我睡觉打鼾很严重',
+        history: [],
+      },
+    } as never, res as never);
+
+    expect(callAiProvider).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(callAiProvider).mock.calls[0][0]).toContain('确定性安全分诊：needs_care');
   });
 });

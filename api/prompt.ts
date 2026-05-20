@@ -1,7 +1,7 @@
 import { getScenarioDefinition } from '../src/domain/scenarios';
 import { formatPersonalizationForPrompt } from '../src/domain/personalization';
 import { buildProgramContextForPrompt } from '../src/domain/program';
-import type { AssessmentResult, ChatMessage, PersonalizedSleepProfile, ProgramPromptContext, SleepProfile, SleepScenario } from '../src/domain/types';
+import type { AssessmentResult, ChatMessage, ConsultationDiarySummary, PersonalizedSleepProfile, ProgramPromptContext, SafetyTriageResult, SleepProfile, SleepScenario } from '../src/domain/types';
 
 const scenarioResponseGuidance: Record<SleepScenario, string> = {
   hard_to_fall_asleep:
@@ -31,6 +31,31 @@ export function formatAssessmentContext(result: AssessmentResult): string {
 - 风险标记：${result.riskFlags.join('、') || '无'}`;
 }
 
+function formatMinutesAsHours(minutes: number | null): string {
+  if (typeof minutes !== 'number') return '未提供';
+  const rounded = Math.round(minutes);
+  const hours = Math.floor(rounded / 60);
+  const rest = rounded % 60;
+  if (hours === 0) return `${rest}分钟`;
+  if (rest === 0) return `${hours}小时`;
+  return `${hours}小时${rest}分钟`;
+}
+
+function formatNumber(value: number | null, unit: string): string {
+  return typeof value === 'number' ? `${value}${unit}` : '未提供';
+}
+
+export function formatDiarySummaryContext(summary: ConsultationDiarySummary): string {
+  return `最近 ${summary.daysWindow} 天睡眠日记摘要（${summary.dateRange.from} 至 ${summary.dateRange.to}）：
+- 记录天数：${summary.entryCount}
+- 平均睡眠时长：${formatMinutesAsHours(summary.averageSleepDurationMinutes)}
+- 平均入睡耗时：${formatNumber(summary.averageSleepLatencyMinutes, '分钟')}
+- 平均夜醒次数：${formatNumber(summary.averageAwakenings, '次')}
+- 平均睡眠质量：${formatNumber(summary.averageSleepQuality, '/5')}
+- 近期影响因素：${summary.recentFactors.join('、') || '未记录'}
+- 近期备注：${summary.recentNotes.join('；') || '未记录'}`;
+}
+
 export function buildSleepAdvisorPrompt(
   profile: SleepProfile,
   message: string,
@@ -39,7 +64,9 @@ export function buildSleepAdvisorPrompt(
   scenario?: SleepScenario,
   personalization?: PersonalizedSleepProfile,
   programContext?: ProgramPromptContext,
+  diarySummary?: ConsultationDiarySummary,
   mode?: 'standalone' | 'user',
+  safetyTriage?: SafetyTriageResult,
 ): string {
   const recentHistory = history
     .slice(-6)
@@ -63,6 +90,17 @@ export function buildSleepAdvisorPrompt(
 - 不要在 JSON 字符串里使用 Markdown 序号、加粗标记或整段长文。`
     : '';
   const programPromptContext = programContext ? `\n\n${buildProgramContextForPrompt(programContext)}` : '';
+  const effectiveSafetyTriage = safetyTriage ?? programContext?.safetyTriage;
+  const safetyTriageContext = effectiveSafetyTriage
+    ? `\n\n确定性安全分诊：${effectiveSafetyTriage.level}
+- 风险类别：${effectiveSafetyTriage.categories.join('、') || '无'}
+- 风险原因：${effectiveSafetyTriage.reasons.join('、') || '无'}
+- 是否阻断 AI：${effectiveSafetyTriage.shouldBlockAi ? '是' : '否'}
+- 边界：禁止诊断；禁止治疗承诺；禁止处方；禁止药物或补充剂剂量；禁止覆盖确定性安全分诊。`
+    : '';
+  const diarySummaryContext = diarySummary && diarySummary.entryCount > 0
+    ? `\n\n${formatDiarySummaryContext(diarySummary)}`
+    : '';
 
   const baseInstructions = `
 在回答之前，先判断用户的风险等级为"normal"或"high_risk"。
@@ -107,6 +145,8 @@ ${scenarioSystemPrompt}
 ${assessmentContext}
 ${personalizationContext}
 ${programPromptContext}
+${safetyTriageContext}
+${diarySummaryContext}
 最近对话：
 ${recentHistory || '暂无历史消息'}
 

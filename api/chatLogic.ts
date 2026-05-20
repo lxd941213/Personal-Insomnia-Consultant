@@ -1,7 +1,7 @@
 import { normalizeAiResponse, safeFallbackResponse } from '../src/domain/aiResponse';
-import { detectHighRiskSignal } from '../src/domain/safety';
+import { triageSafety } from '../src/domain/safety';
 import { buildPersonalizationProfile } from '../src/domain/personalization';
-import type { AssessmentResult, ChatMessage, ProgramPromptContext, SleepProfile, SleepScenario } from '../src/domain/types';
+import type { AssessmentResult, ChatMessage, ConsultationDiarySummary, ProgramPromptContext, SleepProfile, SleepScenario } from '../src/domain/types';
 import { buildSleepAdvisorPrompt } from './prompt';
 import { callAiProvider } from './provider';
 
@@ -55,6 +55,7 @@ export interface ChatInput {
   history?: ChatMessage[];
   assessmentResult?: AssessmentResult;
   scenario?: SleepScenario;
+  diarySummary?: ConsultationDiarySummary;
   programContext?: ProgramPromptContext;
 }
 
@@ -67,22 +68,37 @@ export async function processChat(input: ChatInput): Promise<{ status: number; b
     return { status: 400, body: { error: 'Message too long' } };
   }
 
-  const personalization = buildPersonalizationProfile({
+  const triage = triageSafety({
+    message: input.message,
     profile: input.profile,
     assessmentResult: input.assessmentResult ?? null,
-    diarySummary: undefined,
+    diaryNotes: input.diarySummary?.recentNotes,
   });
 
-  if (personalization.careAdvice.shouldSeekCare && personalization.careAdvice.urgency === 'urgent') {
-    return { status: 200, body: safeFallbackResponse() };
-  }
-
-  if (detectHighRiskSignal(input.message) || input.profile.safetySignals.length > 0) {
-    return { status: 200, body: safeFallbackResponse() };
+  if (triage.shouldBlockAi) {
+    return { status: 200, body: safeFallbackResponse(triage.careNotice ?? undefined) };
   }
 
   try {
-    const prompt = buildSleepAdvisorPrompt(input.profile, input.message, input.history || [], input.assessmentResult, input.scenario, personalization, input.programContext, 'user');
+    const personalization = buildPersonalizationProfile({
+      profile: input.profile,
+      assessmentResult: input.assessmentResult ?? null,
+      diarySummary: input.diarySummary,
+    });
+
+    const promptProgramContext = input.programContext
+      ? { ...input.programContext, safetyTriage: triage }
+      : undefined;
+
+    if (
+      personalization.careAdvice.shouldSeekCare &&
+      personalization.careAdvice.urgency === 'urgent' &&
+      triage.level !== 'needs_care'
+    ) {
+      return { status: 200, body: safeFallbackResponse() };
+    }
+
+    const prompt = buildSleepAdvisorPrompt(input.profile, input.message, input.history || [], input.assessmentResult, input.scenario, personalization, promptProgramContext, input.diarySummary, 'user', triage);
     const providerResult = await callAiProvider(prompt);
     const parsed = parseProviderJson(providerResult.content);
     return { status: 200, body: normalizeAiResponse(parsed) };

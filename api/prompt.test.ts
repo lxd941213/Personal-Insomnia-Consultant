@@ -102,6 +102,37 @@ describe('buildSleepAdvisorPrompt', () => {
     expect(prompt).not.toContain('完整睡眠日记');
   });
 
+  it('includes recent diary summary without raw full diary history', () => {
+    const prompt = buildSleepAdvisorPrompt(
+      profile,
+      '请结合最近睡眠情况给建议',
+      [],
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      {
+        entryCount: 2,
+        daysWindow: 7,
+        dateRange: { from: '2026-05-13', to: '2026-05-19' },
+        averageSleepDurationMinutes: 330,
+        averageSleepLatencyMinutes: 55,
+        averageAwakenings: 2.5,
+        averageSleepQuality: 2,
+        recentFactors: ['睡前刷手机', '工作压力'],
+        recentNotes: ['凌晨醒了几次'],
+      },
+    );
+
+    expect(prompt).toContain('最近 7 天睡眠日记摘要');
+    expect(prompt).toContain('记录天数：2');
+    expect(prompt).toContain('平均睡眠时长：5小时30分钟');
+    expect(prompt).toContain('平均入睡耗时：55分钟');
+    expect(prompt).toContain('近期影响因素：睡前刷手机、工作压力');
+    expect(prompt).toContain('近期备注：凌晨醒了几次');
+    expect(prompt).not.toContain('完整睡眠日记');
+  });
+
   it('requires structured, scenario-specific answers for scene chat', () => {
     const prompt = buildSleepAdvisorPrompt(
       profile,
@@ -116,5 +147,47 @@ describe('buildSleepAdvisorPrompt', () => {
     expect(prompt).toContain('summary 只能写 1-2 句总览');
     expect(prompt).toContain('suggestions 必须给出睡前 30 分钟计划的分阶段安排');
     expect(prompt).toContain('不要把所有内容塞进 summary');
+  });
+
+  it('includes deterministic safety triage status and non-diagnostic boundaries', () => {
+    const prompt = buildSleepAdvisorPrompt(
+      profile,
+      '我长期靠酒才能睡',
+      [],
+      undefined,
+      undefined,
+      undefined,
+      {
+        currentDay: 1,
+        todayTask: {
+          day: 1,
+          title: '睡眠环境重置',
+          category: 'sleep_hygiene',
+          evidenceLabel: '睡眠卫生',
+          estimatedMinutes: 10,
+          rationale: '减少睡前刺激。',
+          action: '调暗灯光。',
+          fallbackAction: '只完成调暗灯光。',
+          safetyNote: null,
+        },
+        stats: { completedCount: 0, skippedCount: 0, completionRate: 0, currentStreak: 0, needsFallback: false },
+        safetyStatus: 'needs_care',
+        safetyTriage: {
+          level: 'urgent',
+          reasons: ['存在助眠药物、镇静药或酒精依赖信号'],
+          categories: ['medication_or_alcohol_dependence'],
+          shouldBlockAi: true,
+          careNotice: '请优先专业评估。',
+        },
+      },
+      undefined,
+      'user',
+    );
+
+    expect(prompt).toContain('确定性安全分诊：urgent');
+    expect(prompt).toContain('禁止诊断');
+    expect(prompt).toContain('禁止治疗承诺');
+    expect(prompt).toContain('禁止处方');
+    expect(prompt).toContain('禁止药物或补充剂剂量');
   });
 });
