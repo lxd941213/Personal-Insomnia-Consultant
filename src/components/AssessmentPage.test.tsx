@@ -104,5 +104,36 @@ describe('AssessmentPage', () => {
     await user.click(screen.getByRole('button', { name: '生成自测报告' }));
 
     expect(screen.getByText('存在安全信号：疑似睡眠呼吸暂停')).toBeVisible();
+    expect(screen.getByText('建议专业评估后再执行普通助眠任务')).toBeVisible();
+    expect(screen.getByText('整理睡眠记录')).toBeVisible();
+  });
+
+  it('allows uncertain answers with optional context and marks the report as estimated', async () => {
+    const user = userEvent.setup();
+    const onComplete = vi.fn();
+    render(<AssessmentPage profile={profile} onComplete={onComplete} onBack={vi.fn()} />);
+
+    const rows = screen.getAllByTestId(/^rating-row-(isi|psqi)-\d+$/);
+    for (const row of rows) {
+      const firstOption = row.querySelector('input[type="radio"]');
+      if (firstOption) await user.click(firstOption);
+    }
+
+    await user.click(screen.getByTestId('uncertain-answer-psqi-2'));
+    await user.type(
+      screen.getByLabelText('补充说明（选填）'),
+      '睡眠效率不好判断，但最近常觉得没睡踏实。',
+    );
+    await user.click(screen.getByRole('button', { name: '生成自测报告' }));
+
+    expect(screen.getByText('本次结果包含估算答案')).toBeVisible();
+    expect(screen.getByText(/睡眠效率不好判断/)).toBeVisible();
+    expect(onComplete).toHaveBeenCalledWith(expect.objectContaining({
+      responseQuality: expect.objectContaining({
+        confidence: 'estimated',
+        uncertainCount: 1,
+        note: '睡眠效率不好判断，但最近常觉得没睡踏实。',
+      }),
+    }));
   });
 });

@@ -14,7 +14,9 @@ import { ResetConfirmDrawer } from './components/ResetConfirmDrawer';
 import { TodayPage } from './components/TodayPage';
 import { TrendsPage } from './components/TrendsPage';
 import type { AssessmentResult, SleepProfile, SleepScenario } from './domain/types';
-import { clearAllLocalData, getAssessmentResult, getSleepProfile, saveSleepProfile } from './storage/localStore';
+import { buildConsultationDiarySummary } from './domain/sleepDiary';
+import { resolveProgramState, resolveTodayProgramTask } from './domain/program';
+import { clearAllLocalData, getAssessmentResult, getDailyTaskLogs, getDiaryEntries, getSleepProgram, getSleepProfile, saveSleepProfile } from './storage/localStore';
 
 type ChildView = 'profile' | 'assessment' | 'knowledge' | 'chat' | 'relaxation' | null;
 
@@ -129,7 +131,30 @@ export default function App() {
   // Render tab shell
   function renderTabPage() {
     switch (activeTab) {
-      case 'today':
+      case 'today': {
+        const diarySummary = buildConsultationDiarySummary(getDiaryEntries());
+        const existingProgram = getSleepProgram();
+        if (!existingProgram) {
+          return (
+            <TodayPage
+              profile={profile!}
+              assessmentResult={assessmentResult}
+              onOpenChat={openChat}
+              onOpenAssessment={() => setChildView('assessment')}
+              onOpenKnowledge={openKnowledge}
+              onOpenRelaxation={openRelaxation}
+            />
+          );
+        }
+        const programState = resolveProgramState({
+          program: existingProgram,
+          profile: profile!,
+          assessmentResult,
+          diarySummary,
+          logs: getDailyTaskLogs(),
+          today: new Date().toISOString().slice(0, 10),
+        });
+        const { task: todayTask, status: todayStatus } = resolveTodayProgramTask(programState);
         return (
           <TodayPage
             profile={profile!}
@@ -138,13 +163,17 @@ export default function App() {
             onOpenAssessment={() => setChildView('assessment')}
             onOpenKnowledge={openKnowledge}
             onOpenRelaxation={openRelaxation}
+            todayTask={{ day: todayTask.day, title: todayTask.title, status: todayStatus }}
+            onOpenPlans={() => setActiveTab('plans')}
           />
         );
+      }
       case 'diary':
         return <DiaryPage />;
       case 'trends':
         return (
           <TrendsPage
+            profile={profile!}
             onOpenDiary={() => setActiveTab('diary')}
           />
         );

@@ -3,16 +3,23 @@ import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { PlansPage } from './PlansPage';
 import type { AssessmentResult, DailyTaskLog, SleepDiaryEntry, SleepProfile } from '../domain/types';
+import { buildDiaryEntry, upsertWakeCheckin } from '../domain/sleepDiary';
 
 const storageMock = vi.hoisted(() => ({
   dailyTaskLogs: [] as DailyTaskLog[],
+  diaryEntries: [] as SleepDiaryEntry[],
+}));
+
+const saveDailyTaskLogsMock = vi.hoisted(() => vi.fn((logs: DailyTaskLog[]) => {
+  storageMock.dailyTaskLogs = logs;
 }));
 
 vi.mock('../storage/localStore', () => ({
-  getDiaryEntries: (): SleepDiaryEntry[] => [],
+  getDiaryEntries: (): SleepDiaryEntry[] => storageMock.diaryEntries,
   getSleepProgram: vi.fn(() => null),
   getDailyTaskLogs: vi.fn(() => storageMock.dailyTaskLogs),
   saveSleepProgram: vi.fn(),
+  saveDailyTaskLogs: saveDailyTaskLogsMock,
 }));
 
 const profile: SleepProfile = {
@@ -39,6 +46,7 @@ const assessmentResult: AssessmentResult = {
 describe('PlansPage', () => {
   beforeEach(() => {
     storageMock.dailyTaskLogs = [];
+    storageMock.diaryEntries = [];
   });
 
   it('renders a current priority recommendation with visible reasons', () => {
@@ -56,7 +64,7 @@ describe('PlansPage', () => {
 
     expect(screen.getByText('14天改善计划')).toBeInTheDocument();
     expect(screen.getByText(/第 1 天 \/ 14 天/)).toBeInTheDocument();
-    expect(screen.getByText(/今日任务/)).toBeInTheDocument();
+    expect(screen.getByText('今日任务', { selector: '.evidence-label' })).toBeInTheDocument();
     expect(screen.queryByText(/第14天：第 2 周复盘和下一步/)).not.toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: '查看全部 14 天' }));
@@ -92,6 +100,46 @@ describe('PlansPage', () => {
     expect(todayPreview).not.toHaveClass('today');
   });
 
+  it('uses recent diary data to personalize the current 14-day plan', () => {
+    const today = new Date();
+    const recent = new Date(today);
+    recent.setUTCDate(today.getUTCDate() - 1);
+    const old = new Date(today);
+    old.setUTCDate(today.getUTCDate() - 9);
+    storageMock.diaryEntries = [
+      upsertWakeCheckin(buildDiaryEntry(recent.toISOString().slice(0, 10)), {
+        sleepStart: '23:30',
+        wakeTime: '06:30',
+        sleepLatencyMinutes: 20,
+        awakenings: 4,
+        sleepQuality: 2,
+        dreamNote: '',
+        daytimeFeeling: '疲惫',
+        notes: '',
+      }),
+      upsertWakeCheckin(buildDiaryEntry(old.toISOString().slice(0, 10)), {
+        sleepStart: '23:00',
+        wakeTime: '07:00',
+        sleepLatencyMinutes: 15,
+        awakenings: 0,
+        sleepQuality: 5,
+        dreamNote: '',
+        daytimeFeeling: '精神好',
+        notes: '',
+      }),
+    ];
+
+    render(
+      <PlansPage
+        profile={{ ...profile, mainConcern: 'frequent_waking' }}
+        assessmentResult={assessmentResult}
+      />,
+    );
+
+    expect(screen.getByRole('heading', { name: '第1天：夜醒应对' })).toBeInTheDocument();
+    expect(screen.getByText(/平均夜醒约 4 次/)).toBeInTheDocument();
+  });
+
   it('keeps plan library categories collapsed until opened', async () => {
     const user = userEvent.setup();
     render(<PlansPage profile={profile} assessmentResult={assessmentResult} />);
@@ -112,8 +160,54 @@ describe('PlansPage', () => {
       />,
     );
 
-    expect(screen.getAllByText('优先进行专业评估').length).toBeGreaterThan(0);
+    expect(screen.getByText('建议专业评估后再执行普通助眠任务')).toBeInTheDocument();
+    expect(screen.getByText('整理睡眠记录')).toBeInTheDocument();
     expect(screen.getByText('当前优先方案')).toBeInTheDocument();
-    expect(screen.queryByText(/第1天：睡眠环境重置/)).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '完成今日任务' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '跳过今日任务' })).not.toBeInTheDocument();
+  });
+
+  it('saves completed feedback for today task and updates progress', async () => {
+    const user = userEvent.setup();
+    render(<PlansPage profile={profile} assessmentResult={assessmentResult} />);
+
+    await user.click(screen.getByRole('button', { name: '完成今日任务' }));
+    await user.click(screen.getByRole('button', { name: '较容易' }));
+    await user.click(screen.getByRole('button', { name: '较好' }));
+    await user.click(screen.getByRole('button', { name: '16-30分钟' }));
+    await user.click(screen.getByRole('button', { name: '1次' }));
+    await user.type(screen.getByLabelText('白天精力'), '精神不错');
+    await user.type(screen.getByLabelText('任务备注'), '完成了替代动作');
+    await user.click(screen.getByRole('button', { name: '保存任务反馈' }));
+
+    expect(saveDailyTaskLogsMock).toHaveBeenCalled();
+    expect(storageMock.dailyTaskLogs[0]).toMatchObject({
+      day: 1,
+      status: 'completed',
+      difficulty: 'easy',
+      sleepQuality: 4,
+      sleepLatencyMinutes: 25,
+      awakenings: 1,
+      daytimeEnergy: '精神不错',
+      note: '完成了替代动作',
+    });
+    expect(screen.getByText(/已完成 1 个任务/)).toBeInTheDocument();
+  });
+
+  it('saves skipped feedback for today task', async () => {
+    const user = userEvent.setup();
+    render(<PlansPage profile={profile} assessmentResult={assessmentResult} />);
+
+    await user.click(screen.getByRole('button', { name: '跳过今日任务' }));
+    await user.click(screen.getByRole('button', { name: '较难' }));
+    await user.type(screen.getByLabelText('任务备注'), '今天加班太晚');
+    await user.click(screen.getByRole('button', { name: '保存任务反馈' }));
+
+    expect(storageMock.dailyTaskLogs[0]).toMatchObject({
+      day: 1,
+      status: 'skipped',
+      difficulty: 'hard',
+      note: '今天加班太晚',
+    });
   });
 });

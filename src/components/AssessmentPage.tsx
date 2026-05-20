@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { isiQuestions, psqiLiteQuestions, buildAssessmentResult } from '../domain/assessment';
 import type { AssessmentQuestion } from '../domain/assessment';
-import type { AssessmentResult, SleepProfile } from '../domain/types';
+import type { AssessmentResult, AssessmentUncertainItem, SleepProfile } from '../domain/types';
+import { buildSafetyDisplayCopy, triageSafety } from '../domain/safety';
+import { SafetyCarePanel } from './SafetyCarePanel';
 import { saveAssessmentResult } from '../storage/localStore';
 
 interface Props {
@@ -14,13 +16,16 @@ interface RatingRowProps {
   question: AssessmentQuestion;
   group: 'isi' | 'psqi';
   value: number | undefined;
+  isUncertain: boolean;
   onChange: (id: number, value: number) => void;
+  onUncertain: (question: AssessmentQuestion) => void;
 }
 
-function RatingRow({ question, group, value, onChange }: RatingRowProps) {
+function RatingRow({ question, group, value, isUncertain, onChange, onUncertain }: RatingRowProps) {
   return (
     <div className="rating-row" data-testid={`rating-row-${group}-${question.id}`}>
       <span className="rating-label">{question.label}</span>
+      {question.helperText && <p className="rating-helper">{question.helperText}</p>}
       <div className="rating-options">
         {question.options.map((opt) => (
           <label key={opt.value} className="rating-option">
@@ -28,22 +33,34 @@ function RatingRow({ question, group, value, onChange }: RatingRowProps) {
               type="radio"
               name={`${group}-q-${question.id}`}
               value={opt.value}
-              checked={value === opt.value}
+              checked={!isUncertain && value === opt.value}
               onChange={() => onChange(question.id, opt.value)}
             />
             <span>{opt.label}</span>
           </label>
         ))}
+        {question.uncertainFallbackValue !== undefined && (
+          <button
+            type="button"
+            className={`rating-option uncertain-option${isUncertain ? ' selected' : ''}`}
+            data-testid={`uncertain-answer-${group}-${question.id}`}
+            onClick={() => onUncertain(question)}
+          >
+            不好判断
+          </button>
+        )}
       </div>
     </div>
   );
 }
 
 interface AssessmentReportProps {
+  profile: SleepProfile;
   result: AssessmentResult;
 }
 
-function AssessmentReport({ result }: AssessmentReportProps) {
+function AssessmentReport({ profile, result }: AssessmentReportProps) {
+  const safetyTriage = triageSafety({ profile, assessmentResult: result });
   const hasRisk = result.riskFlags.length > 0;
   const overall = hasRisk
     ? '本次自测提示存在需要关注的睡眠风险，建议优先稳定作息并考虑专业评估。'
@@ -96,6 +113,22 @@ function AssessmentReport({ result }: AssessmentReportProps) {
           </ul>
         </div>
       )}
+      {result.responseQuality && (
+        <div className="report-section response-quality">
+          <h3>{result.responseQuality.confidence === 'estimated' ? '本次结果包含估算答案' : '补充说明'}</h3>
+          {result.responseQuality.confidence === 'estimated' && (
+            <p className="report-summary">
+              有 {result.responseQuality.uncertainCount} 道题使用"不好判断"，已按中间值计入分数；本次结果更适合作为参考趋势。
+            </p>
+          )}
+          {result.responseQuality.note && (
+            <p className="report-note">{result.responseQuality.note}</p>
+          )}
+        </div>
+      )}
+      {safetyTriage.level !== 'normal' && (
+        <SafetyCarePanel level={safetyTriage.level} copy={buildSafetyDisplayCopy(safetyTriage)} />
+      )}
       <div className="report-section">
         <h3>下一步建议</h3>
         <ul>
@@ -131,16 +164,48 @@ function getPsqiLevelLabel(level: string): string {
 export function AssessmentPage({ profile, onComplete, onBack }: Props) {
   const [isiAnswers, setIsiAnswers] = useState<Record<number, number>>({});
   const [psqiAnswers, setPsqiAnswers] = useState<Record<number, number>>({});
+  const [uncertainAnswers, setUncertainAnswers] = useState<Record<string, AssessmentUncertainItem>>({});
+  const [optionalNote, setOptionalNote] = useState('');
   const [showReport, setShowReport] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<AssessmentResult | null>(null);
 
+  const clearUncertainAnswer = (group: 'isi' | 'psqi', id: number) => {
+    setUncertainAnswers((prev) => {
+      const key = `${group}-${id}`;
+      if (!prev[key]) return prev;
+      const next = { ...prev };
+      delete next[key];
+      return next;
+    });
+  };
+
   const handleIsiChange = (id: number, value: number) => {
+    clearUncertainAnswer('isi', id);
     setIsiAnswers((prev) => ({ ...prev, [id]: value }));
   };
 
   const handlePsqiChange = (id: number, value: number) => {
+    clearUncertainAnswer('psqi', id);
     setPsqiAnswers((prev) => ({ ...prev, [id]: value }));
+  };
+
+  const handleUncertainAnswer = (group: 'isi' | 'psqi', question: AssessmentQuestion) => {
+    if (question.uncertainFallbackValue === undefined) return;
+    const fallbackValue = question.uncertainFallbackValue;
+    if (group === 'isi') {
+      setIsiAnswers((prev) => ({ ...prev, [question.id]: fallbackValue }));
+    } else {
+      setPsqiAnswers((prev) => ({ ...prev, [question.id]: fallbackValue }));
+    }
+    setUncertainAnswers((prev) => ({
+      ...prev,
+      [`${group}-${question.id}`]: {
+        group: group === 'isi' ? 'isi' : 'psqiLite',
+        questionId: question.id,
+        fallbackValue,
+      },
+    }));
   };
 
   const allAnswered =
@@ -153,7 +218,15 @@ export function AssessmentPage({ profile, onComplete, onBack }: Props) {
       return;
     }
     setError(null);
-    const assessmentResult = buildAssessmentResult({ isiAnswers, psqiLiteAnswers: psqiAnswers, profile });
+    const assessmentResult = buildAssessmentResult({
+      isiAnswers,
+      psqiLiteAnswers: psqiAnswers,
+      profile,
+      uncertainty: {
+        items: Object.values(uncertainAnswers),
+        note: optionalNote,
+      },
+    });
     saveAssessmentResult(assessmentResult);
     setResult(assessmentResult);
     setShowReport(true);
@@ -164,7 +237,7 @@ export function AssessmentPage({ profile, onComplete, onBack }: Props) {
     return (
       <div className="page assessment-page">
         <button type="button" className="back-btn" onClick={onBack}>返回首页</button>
-        <AssessmentReport result={result} />
+        <AssessmentReport profile={profile} result={result} />
       </div>
     );
   }
@@ -185,7 +258,9 @@ export function AssessmentPage({ profile, onComplete, onBack }: Props) {
                 question={q}
                 group="isi"
                 value={isiAnswers[q.id]}
+                isUncertain={Boolean(uncertainAnswers[`isi-${q.id}`])}
                 onChange={handleIsiChange}
+                onUncertain={(question) => handleUncertainAnswer('isi', question)}
               />
             ))}
           </div>
@@ -200,11 +275,23 @@ export function AssessmentPage({ profile, onComplete, onBack }: Props) {
                 question={q}
                 group="psqi"
                 value={psqiAnswers[q.id]}
+                isUncertain={Boolean(uncertainAnswers[`psqi-${q.id}`])}
                 onChange={handlePsqiChange}
+                onUncertain={(question) => handleUncertainAnswer('psqi', question)}
               />
             ))}
           </div>
         </div>
+
+        <label className="assessment-note-field">
+          <span>补充说明（选填）</span>
+          <textarea
+            value={optionalNote}
+            onChange={(event) => setOptionalNote(event.target.value)}
+            placeholder="如果有题目不好选，可以简单描述你的睡眠情况。"
+            rows={4}
+          />
+        </label>
 
         {error && <p className="error" role="alert">{error}</p>}
 

@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
 import { sleepPlans, recommendSleepPlans } from '../domain/sleepPlans';
-import { summarizeRecentDiary } from '../domain/sleepDiary';
-import { createSleepProgram, resolveProgramState } from '../domain/program';
-import { getDailyTaskLogs, getDiaryEntries, getSleepProgram, saveSleepProgram } from '../storage/localStore';
-import type { AssessmentResult, PlanRecommendation, ProgramTask, SleepPlan, SleepPlanCategory, TaskStatus } from '../domain/types';
+import { buildConsultationDiarySummary } from '../domain/sleepDiary';
+import { buildDailyTaskLog, createSleepProgram, resolveProgramState, upsertDailyTaskLog } from '../domain/program';
+import { getDailyTaskLogs, getDiaryEntries, getSleepProgram, saveDailyTaskLogs, saveSleepProgram } from '../storage/localStore';
+import { buildSafetyDisplayCopy, triageSafety } from '../domain/safety';
+import { SafetyCarePanel } from './SafetyCarePanel';
+import type { AssessmentResult, DailyTaskLog, PlanRecommendation, ProgramTask, SleepPlan, SleepPlanCategory, TaskStatus } from '../domain/types';
 import type { SleepProfile } from '../domain/types';
 
 const categoryLabels: Record<SleepPlanCategory, string> = {
@@ -184,26 +186,31 @@ function CompactRecommendationList({
 
 function ProgramOverview({
   programState,
+  profile,
+  assessmentResult,
   expanded,
   onToggle,
+  onStartFeedback,
 }: {
   programState: ProgramState;
+  profile: SleepProfile;
+  assessmentResult: AssessmentResult | null;
   expanded: boolean;
   onToggle: () => void;
+  onStartFeedback: (status: 'completed' | 'skipped') => void;
 }) {
   if (programState.program.status === 'needs_care') {
+    const triage = triageSafety({
+      profile,
+      assessmentResult,
+    });
+
     return (
       <section>
         <div className="section-header">
           <h2>14天改善计划</h2>
         </div>
-        <article className="plan-card-featured">
-          <h3>优先进行专业评估</h3>
-          <p>当前存在需要先排查的安全信号。建议先记录症状、准备问题，并咨询医生或睡眠门诊。</p>
-          {programState.safetyReasons.length > 0 && (
-            <p className="fine-print">原因：{summarizeReasons(programState.safetyReasons)}</p>
-          )}
-        </article>
+        <SafetyCarePanel level={triage.level} copy={buildSafetyDisplayCopy(triage)} />
       </section>
     );
   }
@@ -246,6 +253,16 @@ function ProgramOverview({
             </div>
           )}
         </div>
+        {todayTask && todayTask.status === 'today' && (
+          <div className="task-feedback-actions">
+            <button type="button" className="primary-button" onClick={() => onStartFeedback('completed')}>
+              完成今日任务
+            </button>
+            <button type="button" className="action-btn" onClick={() => onStartFeedback('skipped')}>
+              跳过今日任务
+            </button>
+          </div>
+        )}
         <button
           type="button"
           className="collapse-toggle"
@@ -337,17 +354,18 @@ function PlanLibraryAccordion({
 }
 
 export function PlansPage({ profile, assessmentResult }: { profile: SleepProfile; assessmentResult: AssessmentResult | null }) {
-  const diarySummary = summarizeRecentDiary(getDiaryEntries());
+  const diarySummary = buildConsultationDiarySummary(getDiaryEntries());
   const recommendations = recommendSleepPlans({ profile, assessmentResult, diarySummary });
 
   const existingProgram = getSleepProgram();
   const program = existingProgram ?? createSleepProgram({ profile, assessmentResult, diarySummary });
+  const [taskLogs, setTaskLogs] = useState(() => getDailyTaskLogs());
   const programState = resolveProgramState({
     program,
     profile,
     assessmentResult,
     diarySummary,
-    logs: getDailyTaskLogs(),
+    logs: taskLogs,
     today: new Date().toISOString().slice(0, 10),
   });
 
@@ -360,6 +378,14 @@ export function PlansPage({ profile, assessmentResult }: { profile: SleepProfile
   const [expandedPlans, setExpandedPlans] = useState<Set<string>>(new Set());
   const [isPriorityExpanded, setIsPriorityExpanded] = useState(false);
   const [isTimelineExpanded, setIsTimelineExpanded] = useState(false);
+  const [feedbackStatus, setFeedbackStatus] = useState<'completed' | 'skipped' | null>(null);
+  const [feedbackDifficulty, setFeedbackDifficulty] = useState<DailyTaskLog['difficulty']>(null);
+  const [feedbackSleepQuality, setFeedbackSleepQuality] = useState<number | null>(null);
+  const [feedbackLatency, setFeedbackLatency] = useState<number | null>(null);
+  const [feedbackAwakenings, setFeedbackAwakenings] = useState<number | null>(null);
+  const [feedbackEnergy, setFeedbackEnergy] = useState('');
+  const [feedbackNote, setFeedbackNote] = useState('');
+  const [feedbackError, setFeedbackError] = useState('');
 
   useEffect(() => {
     if (!getSleepProgram()) {
@@ -385,9 +411,42 @@ export function PlansPage({ profile, assessmentResult }: { profile: SleepProfile
     });
   }
 
+  function saveTaskFeedback() {
+    if (!feedbackStatus) return;
+    if (!feedbackDifficulty) {
+      setFeedbackError('请选择任务难度');
+      return;
+    }
+    const todayTask = programState.tasks.find((task) => task.day === programState.program.currentDay) ?? programState.tasks[0];
+    const nextLog = buildDailyTaskLog({
+      programId: programState.program.id,
+      day: todayTask.day,
+      date: new Date().toISOString().slice(0, 10),
+      status: feedbackStatus,
+      difficulty: feedbackDifficulty,
+      sleepQuality: feedbackSleepQuality,
+      sleepLatencyMinutes: feedbackLatency,
+      awakenings: feedbackAwakenings,
+      daytimeEnergy: feedbackEnergy,
+      note: feedbackNote,
+    });
+    const nextLogs = upsertDailyTaskLog(taskLogs, nextLog);
+    setTaskLogs(nextLogs);
+    saveDailyTaskLogs(nextLogs);
+    setFeedbackStatus(null);
+    setFeedbackError('');
+  }
+
   return (
     <main className="page plans-page-refined page-enter">
-      <h1>助眠方案</h1>
+      <header className="page-header-sticky">
+        <div className="greeting-header">
+          <div>
+            <h1>助眠方案</h1>
+            <p className="date-line">根据档案、自测和日记筛选当下最适合的行动。</p>
+          </div>
+        </div>
+      </header>
 
       <section>
         <div className="section-header">
@@ -407,10 +466,34 @@ export function PlansPage({ profile, assessmentResult }: { profile: SleepProfile
         onToggle={togglePlan}
       />
 
+      {feedbackStatus && (
+        <TaskFeedbackForm
+          status={feedbackStatus}
+          difficulty={feedbackDifficulty}
+          sleepQuality={feedbackSleepQuality}
+          latency={feedbackLatency}
+          awakenings={feedbackAwakenings}
+          energy={feedbackEnergy}
+          note={feedbackNote}
+          error={feedbackError}
+          onDifficulty={setFeedbackDifficulty}
+          onSleepQuality={setFeedbackSleepQuality}
+          onLatency={setFeedbackLatency}
+          onAwakenings={setFeedbackAwakenings}
+          onEnergy={setFeedbackEnergy}
+          onNote={setFeedbackNote}
+          onCancel={() => { setFeedbackStatus(null); setFeedbackError(''); }}
+          onSave={saveTaskFeedback}
+        />
+      )}
+
       <ProgramOverview
         programState={programState}
+        profile={profile}
+        assessmentResult={assessmentResult}
         expanded={isTimelineExpanded}
         onToggle={() => setIsTimelineExpanded((value) => !value)}
+        onStartFeedback={setFeedbackStatus}
       />
 
       <PlanLibraryAccordion
@@ -419,5 +502,84 @@ export function PlansPage({ profile, assessmentResult }: { profile: SleepProfile
         onToggle={toggleCategory}
       />
     </main>
+  );
+}
+
+function TaskFeedbackForm({
+  status,
+  difficulty,
+  sleepQuality,
+  latency,
+  awakenings,
+  energy,
+  note,
+  error,
+  onDifficulty,
+  onSleepQuality,
+  onLatency,
+  onAwakenings,
+  onEnergy,
+  onNote,
+  onCancel,
+  onSave,
+}: {
+  status: 'completed' | 'skipped';
+  difficulty: 'easy' | 'ok' | 'hard' | null;
+  sleepQuality: number | null;
+  latency: number | null;
+  awakenings: number | null;
+  energy: string;
+  note: string;
+  error: string;
+  onDifficulty: (value: 'easy' | 'ok' | 'hard') => void;
+  onSleepQuality: (value: number | null) => void;
+  onLatency: (value: number | null) => void;
+  onAwakenings: (value: number | null) => void;
+  onEnergy: (value: string) => void;
+  onNote: (value: string) => void;
+  onCancel: () => void;
+  onSave: () => void;
+}) {
+  return (
+    <section className="task-feedback-panel" aria-label="今日任务反馈">
+      <h2>{status === 'completed' ? '完成反馈' : '跳过反馈'}</h2>
+      <div className="feedback-choice-row">
+        <button type="button" className={difficulty === 'easy' ? 'selected' : ''} onClick={() => onDifficulty('easy')}>较容易</button>
+        <button type="button" className={difficulty === 'ok' ? 'selected' : ''} onClick={() => onDifficulty('ok')}>一般</button>
+        <button type="button" className={difficulty === 'hard' ? 'selected' : ''} onClick={() => onDifficulty('hard')}>较难</button>
+      </div>
+      {status === 'completed' && (
+        <>
+          <div className="feedback-choice-row">
+            <button type="button" className={sleepQuality === 4 ? 'selected' : ''} onClick={() => onSleepQuality(4)}>较好</button>
+            <button type="button" className={sleepQuality === 3 ? 'selected' : ''} onClick={() => onSleepQuality(3)}>一般</button>
+            <button type="button" className={sleepQuality === 2 ? 'selected' : ''} onClick={() => onSleepQuality(2)}>较差</button>
+          </div>
+          <div className="feedback-choice-row">
+            <button type="button" className={latency === 25 ? 'selected' : ''} onClick={() => onLatency(25)}>16-30分钟</button>
+            <button type="button" className={latency === 45 ? 'selected' : ''} onClick={() => onLatency(45)}>31-60分钟</button>
+            <button type="button" className={latency === 75 ? 'selected' : ''} onClick={() => onLatency(75)}>60分钟以上</button>
+          </div>
+          <div className="feedback-choice-row">
+            <button type="button" className={awakenings === 0 ? 'selected' : ''} onClick={() => onAwakenings(0)}>0次</button>
+            <button type="button" className={awakenings === 1 ? 'selected' : ''} onClick={() => onAwakenings(1)}>1次</button>
+            <button type="button" className={awakenings === 2 ? 'selected' : ''} onClick={() => onAwakenings(2)}>2次</button>
+          </div>
+        </>
+      )}
+      <label className="diary-text-field">
+        白天精力
+        <input value={energy} onChange={(event) => onEnergy(event.target.value)} />
+      </label>
+      <label className="diary-text-field">
+        任务备注
+        <textarea value={note} onChange={(event) => onNote(event.target.value)} />
+      </label>
+      {error && <p className="error" role="alert">{error}</p>}
+      <div className="task-feedback-actions">
+        <button type="button" className="primary-button" onClick={onSave}>保存任务反馈</button>
+        <button type="button" className="action-btn" onClick={onCancel}>取消</button>
+      </div>
+    </section>
   );
 }
