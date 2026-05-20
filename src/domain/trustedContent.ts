@@ -18,6 +18,24 @@ const safetyCard = card({
   followUpQuestions: ['哪些情况需要去睡眠门诊？', '看医生前我应该记录什么？'],
 });
 
+const safetyBoundaryCard = card({
+  title: '安全边界与专业帮助',
+  summary: '本工具提供睡眠健康管理参考，不提供诊断、开药或急救服务。出现自伤风险、胸痛、呼吸困难、疑似睡眠呼吸暂停或药物/酒精依赖时，应优先线下专业评估。',
+  keyPoints: [
+    'CBT-I 是慢性失眠管理中常见的一线方向，但具体治疗应由专业人员评估。',
+    '数字化工具适合记录、科普和自我管理辅助，不应替代医生或心理专业人员。',
+    '中国大陆用户如有心理危机，可关注当地 12356 心理援助热线可用性；急性危险优先当地急救和线下急诊。',
+  ],
+  misconceptions: ['睡眠健康管理工具不能替代医生诊断', 'AI 回复不能作为处方或急救服务'],
+  actions: [
+    { title: '整理记录', detail: '记录睡眠时长、夜醒、憋醒、用药饮酒和白天功能影响。' },
+    { title: '优先线下帮助', detail: '出现急性危险、自伤风险、胸痛或呼吸困难时，优先当地急救和线下急诊。' },
+  ],
+  safetyNote: '如有心理危机，可关注当地 12356 心理援助热线可用性；急性危险优先当地急救。',
+  followUpQuestions: ['哪些情况需要专业评估？', '看医生前应该记录什么？'],
+  sourceLabel: 'ACP / AASM / FDA digital health guidance / China public mental-health assistance information',
+});
+
 const fixedWakeCard = card({
   title: '固定起床时间是优先动作',
   summary: '对很多入睡困难和熬夜习惯用户，固定起床时间比强迫早睡更容易执行。',
@@ -66,7 +84,7 @@ export function buildTrustedKnowledgeResponse(scenario: SleepScenario): Knowledg
     wellness_regulation: [relaxationCard, fixedWakeCard],
     bedtime_ritual: [relaxationCard, fixedWakeCard],
     sound_meditation: [relaxationCard],
-    medical_triage: [safetyCard],
+    medical_triage: [safetyBoundaryCard, safetyCard],
     diet_sleep_link: [fixedWakeCard],
   };
 

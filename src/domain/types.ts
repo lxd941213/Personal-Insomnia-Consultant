@@ -163,6 +163,7 @@ export interface KnowledgeCard {
   actions: Suggestion[];
   safetyNote: string | null;
   followUpQuestions: string[];
+  sourceLabel?: string;
 }
 
 export interface KnowledgeResponse {
@@ -390,4 +391,5 @@ export interface ProgramPromptContext {
   todayTask: ProgramTask;
   stats: ProgramStats;
   safetyStatus: ProgramStatus;
+  safetyTriage?: SafetyTriageResult;
 }

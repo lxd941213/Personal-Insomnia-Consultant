@@ -49,6 +49,18 @@ The MVP stores profile, chat history, and feedback only in the current browser. 
 
 The AI response is for health management reference only and is not medical diagnosis.
 
+## Safety and Product Boundary
+
+This app is a sleep health management and science-education companionship tool. It helps users record sleep, understand possible factors, follow conservative self-management tasks, and discuss sleep-management questions. It is not a diagnosis, treatment, prescription, emergency, or medical decision platform.
+
+For urgent self-harm risk, chest pain, breathing difficulty, suspected sleep apnea with impairment, medication or alcohol dependence, pregnancy or postpartum severe sleep issues, major disease signals, or severe insomnia with major daytime impairment, users should prioritize local emergency services or offline professional evaluation. In China mainland, local psychological assistance or crisis intervention hotlines such as 12356 may be available, but urgent danger should not wait for online guidance.
+
+This app is a local-first sleep health management reference tool. It is not a medical diagnosis, emergency service, prescription tool, or replacement for professional care.
+
+For China-mainland users, urgent self-harm, chest pain, breathing difficulty, suspected sleep apnea with impairment, nightly sedative/alcohol dependence, pregnancy or postpartum severe insomnia, and severe insomnia with major daytime impairment are routed to professional evaluation guidance before ordinary behavior tasks or AI generation.
+
+All profile, diary, task, feedback, and chat history data stays in the current browser. This version does not provide accounts, cloud sync, real system notifications, or medical platform integration.
+
 ## Sleep Enhancement Data
 
 The enhanced diary, trend, relaxation, and plan recommendation features are local-first. Data is stored in this browser through localStorage with sync-ready IDs and timestamps, but this version does not include accounts, backend storage, browser notifications, or audio playback.
