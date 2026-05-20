@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import {
+  buildConsultationDiarySummary,
   buildDiaryEntry,
   calculateSleepDurationMinutes,
   summarizeRecentDiary,
   upsertBedtimeCheckin,
   upsertWakeCheckin,
+  validateWakeCheckin,
 } from './sleepDiary';
 
 describe('sleep diary helpers', () => {
@@ -65,5 +67,80 @@ describe('sleep diary helpers', () => {
       averageAwakenings: 2,
       averageSleepQuality: 2,
     });
+  });
+
+  it('builds a consultation summary from the last 7 days with recent diary notes', () => {
+    const oldEntry = upsertWakeCheckin(buildDiaryEntry('2026-05-10'), {
+      sleepStart: '23:00',
+      wakeTime: '06:00',
+      sleepLatencyMinutes: 10,
+      awakenings: 0,
+      sleepQuality: 5,
+      dreamNote: '',
+      daytimeFeeling: '精神好',
+      notes: '这条太旧，不应进入咨询摘要',
+    });
+    const recentEntry = upsertWakeCheckin(upsertBedtimeCheckin(buildDiaryEntry('2026-05-18'), {
+      mood: '焦虑',
+      stressLevel: 4,
+      factors: ['睡前刷手机', '工作压力'],
+      plannedActions: [],
+      notes: '睡前还在处理工作',
+    }), {
+      sleepStart: '01:00',
+      wakeTime: '06:00',
+      sleepLatencyMinutes: 60,
+      awakenings: 3,
+      sleepQuality: 2,
+      dreamNote: '多梦',
+      daytimeFeeling: '疲惫',
+      notes: '凌晨醒了几次',
+    });
+
+    expect(buildConsultationDiarySummary(
+      [oldEntry, recentEntry],
+      new Date('2026-05-19T12:00:00.000Z'),
+    )).toMatchObject({
+      entryCount: 1,
+      daysWindow: 7,
+      dateRange: { from: '2026-05-13', to: '2026-05-19' },
+      averageSleepDurationMinutes: 300,
+      averageSleepLatencyMinutes: 60,
+      averageAwakenings: 3,
+      averageSleepQuality: 2,
+      recentFactors: ['睡前刷手机', '工作压力'],
+      recentNotes: ['睡前还在处理工作', '凌晨醒了几次'],
+    });
+  });
+
+  it('validates complete wake checkin values', () => {
+    expect(validateWakeCheckin({
+      sleepStart: '23:30',
+      wakeTime: '07:00',
+      sleepLatencyMinutes: 25,
+      awakenings: 1,
+      sleepQuality: 4,
+      dreamNote: '',
+      daytimeFeeling: '还可以',
+      notes: '',
+    })).toEqual([]);
+  });
+
+  it('rejects missing or out-of-range wake checkin values', () => {
+    expect(validateWakeCheckin({
+      sleepStart: '',
+      wakeTime: '07:00',
+      sleepLatencyMinutes: -1,
+      awakenings: -1,
+      sleepQuality: 8,
+      dreamNote: '',
+      daytimeFeeling: '',
+      notes: '',
+    })).toEqual([
+      '请填写入睡时间',
+      '入睡耗时需在 0-300 分钟之间',
+      '夜醒次数需在 0-20 次之间',
+      '睡眠质量需在 1-5 之间',
+    ]);
   });
 });

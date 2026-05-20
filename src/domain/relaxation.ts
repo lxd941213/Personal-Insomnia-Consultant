@@ -40,6 +40,56 @@ export const relaxationTools: RelaxationTool[] = [
     audioUrl: null,
     audioState: 'unavailable',
   },
+  {
+    id: 'body-scan',
+    title: '身体扫描',
+    description: '从脚到头依次觉察身体感受，温和释放紧绷。',
+    estimatedMinutes: 6,
+    steps: [
+      { label: '觉察双脚和小腿的接触感', durationSeconds: 60 },
+      { label: '放松大腿、髋部和腹部', durationSeconds: 60 },
+      { label: '扫描胸口、肩颈和双手', durationSeconds: 60 },
+      { label: '觉察面部、头皮和全身重量', durationSeconds: 60 },
+    ],
+    audioUrl: null,
+    audioState: 'unavailable',
+  },
+  {
+    id: 'sound-meditation',
+    title: '白噪音 / 冥想音频',
+    description: '选择柔和声景，用低音量陪伴睡前放松。',
+    estimatedMinutes: 20,
+    steps: [
+      { label: '选择一种柔和音频', durationSeconds: 30 },
+      { label: '把音量调到刚好听见', durationSeconds: 30 },
+      { label: '闭眼聆听并放松肩颈', durationSeconds: 180 },
+    ],
+    audioUrl: null,
+    audioState: 'available',
+    audioTracks: [
+      {
+        id: 'rain-noise',
+        title: '细雨白噪音',
+        description: '轻密雨声感，适合遮盖环境杂音。',
+        durationMinutes: 20,
+        soundscape: 'rain',
+      },
+      {
+        id: 'ocean-slow',
+        title: '慢海浪',
+        description: '低频起伏更明显，适合睡前降速。',
+        durationMinutes: 20,
+        soundscape: 'ocean',
+      },
+      {
+        id: 'soft-meditation',
+        title: '轻冥想底音',
+        description: '稳定柔和的持续音，适合配合身体扫描。',
+        durationMinutes: 15,
+        soundscape: 'soft-tone',
+      },
+    ],
+  },
 ];
 
 export function buildRelaxationSession(toolId: string, now = new Date()): RelaxationSession {

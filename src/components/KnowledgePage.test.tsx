@@ -124,6 +124,20 @@ describe('KnowledgePage', () => {
     expect(screen.getByText('固定起床时间是优先动作')).toBeInTheDocument();
   });
 
+  it('shows trusted source labels on safety knowledge cards', async () => {
+    render(
+      <KnowledgePage
+        profile={mockProfile}
+        assessmentResult={mockAssessmentResult}
+        initialScenario="medical_triage"
+        onBack={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText('安全边界与专业帮助')).toBeInTheDocument();
+    expect(screen.getByText(/ACP \/ AASM \/ FDA digital health guidance/)).toBeInTheDocument();
+  });
+
   it('saves AI supplemental cards when generated from trusted view', async () => {
     const user = userEvent.setup();
 

@@ -3,7 +3,8 @@ import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ChatPage } from './ChatPage';
 import type { AiResponse, AssessmentResult, SleepProfile } from '../domain/types';
-import { clearAllLocalData, getScopedChatHistory, saveScopedChatHistory } from '../storage/localStore';
+import { buildDiaryEntry, upsertWakeCheckin } from '../domain/sleepDiary';
+import { clearAllLocalData, getScopedChatHistory, saveDiaryEntries, saveScopedChatHistory } from '../storage/localStore';
 import { sendChatMessage } from '../api/chatClient';
 
 const normalResponse: AiResponse = {
@@ -138,6 +139,91 @@ describe('ChatPage', () => {
         programContext: expect.objectContaining({
           currentDay: 1,
           safetyStatus: 'needs_care',
+        }),
+      }));
+    });
+  });
+
+  it('passes unified sleep-context safety triage to chat API', async () => {
+    const user = userEvent.setup();
+    render(
+      <ChatPage
+        profile={{ ...profile, safetySignals: ['疑似睡眠呼吸暂停'] }}
+        onBack={vi.fn()}
+        onOpenResetDrawer={vi.fn()}
+      />,
+    );
+
+    await user.type(screen.getByPlaceholderText('咨询您的睡眠问题...'), '我睡觉打鼾很严重');
+    await user.click(screen.getByRole('button', { name: '发送' }));
+
+    await waitFor(() => {
+      expect(sendChatMessage).toHaveBeenCalledWith(expect.objectContaining({
+        programContext: expect.objectContaining({
+          safetyTriage: expect.objectContaining({
+            level: 'needs_care',
+            categories: expect.arrayContaining(['sleep_apnea']),
+          }),
+        }),
+      }));
+    });
+  });
+
+  it('passes the last 7 days diary summary to chat API', async () => {
+    const user = userEvent.setup();
+    const today = new Date();
+    const recent = new Date(today);
+    recent.setUTCDate(today.getUTCDate() - 1);
+    const old = new Date(today);
+    old.setUTCDate(today.getUTCDate() - 9);
+    const recentDate = recent.toISOString().slice(0, 10);
+    const oldDate = old.toISOString().slice(0, 10);
+    saveDiaryEntries([
+      upsertWakeCheckin(buildDiaryEntry(recentDate), {
+        sleepStart: '01:00',
+        wakeTime: '06:00',
+        sleepLatencyMinutes: 60,
+        awakenings: 3,
+        sleepQuality: 2,
+        dreamNote: '',
+        daytimeFeeling: '疲惫',
+        notes: '凌晨醒了几次',
+      }),
+      upsertWakeCheckin(buildDiaryEntry(oldDate), {
+        sleepStart: '23:00',
+        wakeTime: '07:00',
+        sleepLatencyMinutes: 10,
+        awakenings: 0,
+        sleepQuality: 5,
+        dreamNote: '',
+        daytimeFeeling: '精神好',
+        notes: '旧记录不应进入摘要',
+      }),
+    ]);
+
+    render(
+      <ChatPage
+        profile={profile}
+        chatScope="hard_to_fall_asleep"
+        initialScenario="hard_to_fall_asleep"
+        onBack={vi.fn()}
+        onOpenResetDrawer={vi.fn()}
+      />,
+    );
+
+    await user.type(screen.getByPlaceholderText('咨询入睡困难相关问题...'), '结合最近情况给我建议');
+    await user.click(screen.getByRole('button', { name: '发送' }));
+
+    await waitFor(() => {
+      expect(sendChatMessage).toHaveBeenCalledWith(expect.objectContaining({
+        diarySummary: expect.objectContaining({
+          entryCount: 1,
+          daysWindow: 7,
+          averageSleepDurationMinutes: 300,
+          averageSleepLatencyMinutes: 60,
+          averageAwakenings: 3,
+          averageSleepQuality: 2,
+          recentNotes: ['凌晨醒了几次'],
         }),
       }));
     });

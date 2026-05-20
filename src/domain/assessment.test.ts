@@ -161,6 +161,28 @@ describe('buildAssessmentResult', () => {
 
     expect(result.riskFlags).toContain('存在安全信号：疑似睡眠呼吸暂停');
   });
+
+  it('records uncertain answers and optional notes without changing the score formula', () => {
+    const isiAnswers = { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 };
+    const psqiAnswers = { 0: 1, 1: 2, 2: 2, 3: 1, 4: 0, 5: 2 };
+    const result = buildAssessmentResult({
+      isiAnswers,
+      psqiLiteAnswers: psqiAnswers,
+      profile,
+      uncertainty: {
+        items: [{ group: 'psqiLite', questionId: 2, fallbackValue: 2 }],
+        note: '睡眠效率不好估算，只知道醒来后还是累。',
+      },
+    });
+
+    expect(result.psqiLite.score).toBe(8);
+    expect(result.responseQuality).toEqual({
+      confidence: 'estimated',
+      uncertainCount: 1,
+      note: '睡眠效率不好估算，只知道醒来后还是累。',
+      uncertainItems: [{ group: 'psqiLite', questionId: 2, fallbackValue: 2 }],
+    });
+  });
 });
 
 describe('sleepScenarios', () => {

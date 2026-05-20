@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react';
 import { getDailyTaskLogs, getDiaryEntries } from '../storage/localStore';
 import { buildTaskExecutionInsight, buildTrendSummary } from '../domain/trends';
 import { buildProgramStats } from '../domain/program';
@@ -27,6 +28,10 @@ function MetricTile({ label, value, helper }: { label: string; value: string; he
   );
 }
 
+type TrendHeroMeterStyle = CSSProperties & {
+  '--record-progress': string;
+};
+
 export function TrendsPage({
   profile,
   today = new Date().toISOString().slice(0, 10),
@@ -51,6 +56,10 @@ export function TrendsPage({
   const headlineDetail = hasDiaryData
     ? `近 7 天已记录 ${trends.last7Days.entryCount} 天，重点观察入睡耗时、夜醒和白天状态。`
     : '趋势页依赖起床后的睡眠质量、入睡耗时和夜醒数据。完成一次起床记录后，这里会开始形成判断。';
+  const recordProgress = Math.min(Math.max(trends.last7Days.entryCount, 0), 7) / 7;
+  const recordProgressStyle = {
+    '--record-progress': `${recordProgress * 360}deg`,
+  } as TrendHeroMeterStyle;
 
   return (
     <main className="page trends-page">
@@ -73,7 +82,7 @@ export function TrendsPage({
           <h2 id="trend-overview-title">{headline}</h2>
           <p>{headlineDetail}</p>
         </div>
-        <div className="trend-hero-meter" aria-label="近 7 天记录天数">
+        <div className="trend-hero-meter" style={recordProgressStyle} aria-label="近 7 天记录天数">
           <strong>{trends.last7Days.entryCount}</strong>
           <span>/ 7 天</span>
         </div>

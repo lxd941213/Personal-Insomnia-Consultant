@@ -6,6 +6,7 @@ interface ScenarioLauncherProps {
   mode: 'chat' | 'knowledge';
   onSelect: (scenario: SleepScenario) => void;
   variant?: 'vertical' | 'horizontal';
+  excludeScenarios?: SleepScenario[];
 }
 
 const scenarioIcons: Record<SleepScenario, string> = {
@@ -20,8 +21,9 @@ const scenarioIcons: Record<SleepScenario, string> = {
   'diet_sleep_link': 'coffee',
 };
 
-export function ScenarioLauncher({ mode, onSelect, variant = 'horizontal' }: ScenarioLauncherProps) {
+export function ScenarioLauncher({ mode, onSelect, variant = 'horizontal', excludeScenarios = [] }: ScenarioLauncherProps) {
   const buttonLabel = mode === 'chat' ? '咨询' : '知识';
+  const scenarios = sleepScenarios.filter((scenario) => !excludeScenarios.includes(scenario.id));
 
   useEffect(() => {
     if (typeof window !== 'undefined' && (window as any).lucide) {
@@ -32,7 +34,7 @@ export function ScenarioLauncher({ mode, onSelect, variant = 'horizontal' }: Sce
   if (variant === 'horizontal') {
     return (
       <div className="h-scroll">
-        {sleepScenarios.map((scenario) => (
+        {scenarios.map((scenario) => (
           <button
             key={scenario.id}
             className="scenario-card-compact"
@@ -55,7 +57,7 @@ export function ScenarioLauncher({ mode, onSelect, variant = 'horizontal' }: Sce
 
   return (
     <div className="scenario-grid">
-      {sleepScenarios.map((scenario) => (
+      {scenarios.map((scenario) => (
         <button
           key={scenario.id}
           className="scenario-card"

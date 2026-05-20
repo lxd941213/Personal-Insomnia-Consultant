@@ -31,8 +31,11 @@ describe('MyPage', () => {
 
   it('displays profile information', () => {
     render(<MyPage profile={profile} onOpenResetDrawer={vi.fn()} />);
-    expect(screen.getByText('睡眠档案')).toBeInTheDocument();
-    expect(screen.getByText(/通常睡眠/)).toBeInTheDocument();
+    expect(screen.getByText('睡眠画像')).toBeInTheDocument();
+    expect(screen.getByText('入睡困难')).toBeInTheDocument();
+    expect(screen.getByText('23:00 - 07:00')).toBeInTheDocument();
+    expect(screen.getByText('提醒设置')).toBeInTheDocument();
+    expect(screen.getByText('数据管理')).toBeInTheDocument();
   });
 
   it('calls onOpenResetDrawer when reset button is clicked', async () => {

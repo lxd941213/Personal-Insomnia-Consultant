@@ -22,14 +22,14 @@ function normalizeSuggestions(value: unknown): Suggestion[] | null {
   ) ? value : null;
 }
 
-export function safeFallbackResponse(): AiResponse {
+export function safeFallbackResponse(careNotice = defaultCareNotice): AiResponse {
   return {
     riskLevel: 'high_risk',
     summary: '无法生成可靠的个性化回复',
-    possibleFactors: [],
-    suggestions: [],
+    possibleFactors: ['存在需要专业评估的风险信号'],
+    suggestions: [{ title: '优先寻求专业支持', detail: careNotice }],
     nextQuestions: [],
-    seekCareNotice: defaultCareNotice,
+    seekCareNotice: careNotice,
     disclaimer: defaultDisclaimer,
   };
 }

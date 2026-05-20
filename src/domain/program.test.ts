@@ -1,14 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import {
+  buildDailyTaskLog,
   buildProgramContextForPrompt,
   buildProgramReview,
   buildProgramStats,
   createSleepProgram,
+  buildPersonalizedProgramTasks,
   getProgramTaskTemplate,
   resolveProgramState,
   resolveTodayProgramTask,
+  upsertDailyTaskLog,
 } from './program';
-import type { AssessmentResult, DailyTaskLog, SleepProfile } from './types';
+import type { AssessmentResult, DailyTaskLog, DiarySummary, SleepProfile } from './types';
 
 const baseProfile: SleepProfile = {
   ageRange: '25-34岁',
@@ -28,6 +31,22 @@ const mildAssessment: AssessmentResult = {
   isi: { answers: [], score: 10, level: 'mild', summary: '轻度失眠' },
   psqiLite: { answers: [], score: 7, level: 'fair', summary: '一般' },
   riskFlags: [],
+};
+
+const longLatencyDiary: DiarySummary = {
+  entryCount: 4,
+  averageSleepDurationMinutes: 330,
+  averageSleepLatencyMinutes: 70,
+  averageAwakenings: 1,
+  averageSleepQuality: 3,
+};
+
+const frequentWakingDiary: DiarySummary = {
+  entryCount: 4,
+  averageSleepDurationMinutes: 360,
+  averageSleepLatencyMinutes: 25,
+  averageAwakenings: 4,
+  averageSleepQuality: 2,
 };
 
 function log(day: number, status: 'completed' | 'skipped', date = `2026-05-${String(day).padStart(2, '0')}`): DailyTaskLog {
@@ -77,6 +96,36 @@ describe('program domain', () => {
     expect(program.status).toBe('active');
     expect(program.currentDay).toBe(1);
     expect(program.templateId).toBe('cbti_foundation_14_day');
+  });
+
+  it('personalizes the 14-day task order for long sleep latency', () => {
+    const tasks = buildPersonalizedProgramTasks({
+      profile: baseProfile,
+      assessmentResult: mildAssessment,
+      diarySummary: longLatencyDiary,
+    });
+
+    expect(tasks).toHaveLength(14);
+    expect(tasks.map((task) => task.day)).toEqual(Array.from({ length: 14 }, (_, index) => index + 1));
+    expect(tasks.slice(0, 4).map((task) => task.title)).toEqual(expect.arrayContaining([
+      '固定起床时间',
+      '刺激控制入门',
+    ]));
+    expect(tasks[0].rationale).toContain('最近入睡耗时约 70 分钟');
+  });
+
+  it('personalizes the 14-day task order for frequent awakenings and poor sleep quality', () => {
+    const tasks = buildPersonalizedProgramTasks({
+      profile: { ...baseProfile, mainConcern: 'frequent_waking' },
+      assessmentResult: { ...mildAssessment, psqiLite: { ...mildAssessment.psqiLite, level: 'poor' } },
+      diarySummary: frequentWakingDiary,
+    });
+
+    expect(tasks.slice(0, 5).map((task) => task.title)).toEqual(expect.arrayContaining([
+      '夜醒应对',
+      '睡眠环境重置',
+    ]));
+    expect(tasks.find((task) => task.title === '夜醒应对')?.rationale).toContain('平均夜醒约 4 次');
   });
 
   it('marks the program as needs_care for urgent safety signals', () => {
@@ -187,5 +236,80 @@ describe('program domain', () => {
     expect(context).toContain('当前 14 天改善计划：第 3 天');
     expect(context).toContain('今日任务');
     expect(context).toContain('禁止覆盖安全分流规则');
+  });
+
+  it('builds a daily task log from task feedback', () => {
+    const taskLog = buildDailyTaskLog({
+      programId: 'program-2026-05-20',
+      day: 2,
+      date: '2026-05-21',
+      status: 'completed',
+      difficulty: 'easy',
+      sleepQuality: 4,
+      sleepLatencyMinutes: 25,
+      awakenings: 1,
+      daytimeEnergy: '精神不错',
+      note: '手机放远了',
+      now: new Date('2026-05-21T08:00:00.000Z'),
+    });
+
+    expect(taskLog).toMatchObject({
+      id: 'task-log-program-2026-05-20-2',
+      programId: 'program-2026-05-20',
+      day: 2,
+      date: '2026-05-21',
+      status: 'completed',
+      difficulty: 'easy',
+      sleepQuality: 4,
+      sleepLatencyMinutes: 25,
+      awakenings: 1,
+      daytimeEnergy: '精神不错',
+      note: '手机放远了',
+      version: 1,
+    });
+  });
+
+  it('upserts daily task logs by program and day without double counting', () => {
+    const first = buildDailyTaskLog({
+      programId: 'program-1',
+      day: 1,
+      date: '2026-05-20',
+      status: 'completed',
+      difficulty: 'ok',
+      sleepQuality: 3,
+      sleepLatencyMinutes: 45,
+      awakenings: 2,
+      daytimeEnergy: '一般',
+      note: '',
+      now: new Date('2026-05-20T08:00:00.000Z'),
+    });
+    const second = buildDailyTaskLog({
+      programId: 'program-1',
+      day: 1,
+      date: '2026-05-20',
+      status: 'skipped',
+      difficulty: 'hard',
+      sleepQuality: null,
+      sleepLatencyMinutes: null,
+      awakenings: null,
+      daytimeEnergy: '疲惫',
+      note: '太晚了',
+      now: new Date('2026-05-20T21:00:00.000Z'),
+    });
+
+    const logs = upsertDailyTaskLog([first], second);
+
+    expect(logs).toHaveLength(1);
+    expect(logs[0]).toMatchObject({
+      status: 'skipped',
+      difficulty: 'hard',
+      note: '太晚了',
+      version: 2,
+    });
+    expect(buildProgramStats(logs)).toMatchObject({
+      completedCount: 0,
+      skippedCount: 1,
+      completionRate: 0,
+    });
   });
 });

@@ -1,4 +1,4 @@
-import { buildPersonalizationProfile } from './personalization';
+import { triageSafety } from './safety';
 import type {
   AssessmentResult,
   DailyTaskLog,
@@ -191,6 +191,107 @@ export function getProgramTaskTemplate(): ProgramTask[] {
   return template.map((task) => ({ ...task }));
 }
 
+function isStressHigh(profile: SleepProfile): boolean {
+  return profile.stressLevel.includes('高') || profile.occupationStress === 'high' || profile.occupationStress === 'very_high';
+}
+
+function hasPhoneSignal(profile: SleepProfile): boolean {
+  return profile.habits.some((habit) => habit.includes('手机') || habit.includes('屏幕'))
+    || Boolean(profile.phoneUsageHabit?.includes('频繁'));
+}
+
+function hasCaffeineOrDinnerSignal(profile: SleepProfile): boolean {
+  return profile.habits.some((habit) => habit.includes('咖啡') || habit.includes('茶') || habit.includes('晚餐'))
+    || (profile.dietHabit ?? []).some((habit) => habit.includes('咖啡因') || habit.includes('晚餐'));
+}
+
+function taskByTitle(title: string): ProgramTask {
+  const task = template.find((item) => item.title === title);
+  if (!task) throw new Error(`Program task not found: ${title}`);
+  return { ...task };
+}
+
+function addUniqueTask(target: ProgramTask[], title: string, rationale?: string): void {
+  if (target.some((task) => task.title === title)) return;
+  const task = taskByTitle(title);
+  target.push(rationale ? { ...task, rationale } : task);
+}
+
+function addRemainingTasks(target: ProgramTask[]): void {
+  template
+    .filter((task) => task.title !== '第 1 周复盘' && task.title !== '第 2 周复盘和下一步')
+    .forEach((task) => addUniqueTask(target, task.title));
+}
+
+function assignProgramDays(tasks: ProgramTask[]): ProgramTask[] {
+  return tasks.map((task, index) => ({ ...task, day: index + 1 }));
+}
+
+export function buildPersonalizedProgramTasks(input: ProgramInput): ProgramTask[] {
+  const { profile, assessmentResult, diarySummary } = input;
+  const ordered: ProgramTask[] = [];
+  const latency = diarySummary?.averageSleepLatencyMinutes;
+  const awakenings = diarySummary?.averageAwakenings;
+  const quality = diarySummary?.averageSleepQuality;
+  const longLatency = profile.mainConcern === 'hard_to_fall_asleep' || (latency ?? 0) >= 45;
+  const frequentAwakenings = profile.mainConcern === 'frequent_waking' || profile.mainConcern === 'early_waking' || (awakenings ?? 0) >= 2;
+  const poorQuality = assessmentResult?.psqiLite.level === 'poor' || (quality ?? 5) <= 2.5;
+
+  if (longLatency) {
+    addUniqueTask(
+      ordered,
+      '固定起床时间',
+      typeof latency === 'number'
+        ? `最近入睡耗时约 ${latency} 分钟，先稳定起床时间，避免用强迫早睡增加压力。`
+        : undefined,
+    );
+    addUniqueTask(ordered, '刺激控制入门');
+    addUniqueTask(ordered, '睡眠效率观察');
+  }
+
+  if (frequentAwakenings) {
+    addUniqueTask(
+      ordered,
+      '夜醒应对',
+      typeof awakenings === 'number'
+        ? `最近平均夜醒约 ${awakenings} 次，先减少夜醒后的焦虑、看时间和高刺激行为。`
+        : undefined,
+    );
+    addUniqueTask(ordered, '睡眠环境重置');
+  }
+
+  if (poorQuality) {
+    addUniqueTask(ordered, '睡眠环境重置');
+    addUniqueTask(ordered, '晚间流程微调');
+    addUniqueTask(ordered, '渐进放松或正念');
+  }
+
+  if (hasPhoneSignal(profile)) {
+    addUniqueTask(ordered, '睡前手机边界');
+  }
+
+  if (isStressHigh(profile) || profile.mainConcern === 'vivid_dreams') {
+    addUniqueTask(ordered, '担忧书写');
+    addUniqueTask(ordered, '短放松练习');
+  }
+
+  if (hasCaffeineOrDinnerSignal(profile)) {
+    addUniqueTask(ordered, '咖啡因和晚餐边界');
+  }
+
+  addUniqueTask(ordered, '晨间光照和白天活动');
+  addRemainingTasks(ordered);
+
+  const firstWeek = ordered.slice(0, 6);
+  const secondWeek = ordered.slice(6, 12);
+  return assignProgramDays([
+    ...firstWeek,
+    taskByTitle('第 1 周复盘'),
+    ...secondWeek,
+    taskByTitle('第 2 周复盘和下一步'),
+  ]);
+}
+
 function nowIso(now = new Date()): string {
   return now.toISOString();
 }
@@ -200,13 +301,11 @@ function unique(values: string[]): string[] {
 }
 
 function safetyReasons(input: ProgramInput): string[] {
-  const personalization = buildPersonalizationProfile({
+  const triage = triageSafety({
     profile: input.profile,
     assessmentResult: input.assessmentResult,
-    diarySummary: input.diarySummary,
   });
-
-  const reasons = [...personalization.careAdvice.reasons];
+  const reasons = [...triage.reasons];
   if (input.assessmentResult?.isi.level === 'severe') {
     reasons.push('失眠严重程度为重度');
   }
@@ -284,8 +383,9 @@ export function buildProgramStats(logs: DailyTaskLog[]): ProgramStats {
 export function resolveProgramState(input: ResolveProgramInput): ResolvedProgramState {
   const reasons = safetyReasons(input);
   const stats = buildProgramStats(input.logs);
+  const personalizedTasks = buildPersonalizedProgramTasks(input);
   const currentDay = dayIndexFromDate(input.program, input.today);
-  const allDone = latestLogsByDay(input.logs).size >= template.length;
+  const allDone = latestLogsByDay(input.logs).size >= personalizedTasks.length;
   const status: ProgramStatus = reasons.length > 0
     ? 'needs_care'
     : allDone
@@ -299,7 +399,7 @@ export function resolveProgramState(input: ResolveProgramInput): ResolvedProgram
     status,
   };
   const latest = latestLogsByDay(input.logs);
-  const tasks = template.map((task) => {
+  const tasks = personalizedTasks.map((task) => {
     let statusForTask: TaskStatus = 'locked';
     const log = latest.get(task.day);
     if (log) statusForTask = log.status;
@@ -343,4 +443,49 @@ export function buildProgramContextForPrompt(context: ProgramPromptContext): str
     `完成情况：已完成 ${context.stats.completedCount} 个，跳过 ${context.stats.skippedCount} 个，完成率 ${context.stats.completionRate}%`,
     '边界：禁止覆盖安全分流规则；禁止诊断；禁止药物或补充剂剂量；中医内容只能作为养生参考。',
   ].join('\n');
+}
+
+interface BuildDailyTaskLogInput {
+  programId: string;
+  day: number;
+  date: string;
+  status: 'completed' | 'skipped';
+  difficulty: 'easy' | 'ok' | 'hard' | null;
+  sleepQuality: number | null;
+  sleepLatencyMinutes: number | null;
+  awakenings: number | null;
+  daytimeEnergy: string;
+  note: string;
+  now?: Date;
+}
+
+export function buildDailyTaskLog(input: BuildDailyTaskLogInput): DailyTaskLog {
+  const iso = nowIso(input.now);
+  return {
+    id: `task-log-${input.programId}-${input.day}`,
+    programId: input.programId,
+    day: input.day,
+    date: input.date,
+    status: input.status,
+    difficulty: input.difficulty,
+    sleepQuality: input.sleepQuality,
+    sleepLatencyMinutes: input.sleepLatencyMinutes,
+    awakenings: input.awakenings,
+    daytimeEnergy: input.daytimeEnergy,
+    note: input.note,
+    createdAt: iso,
+    updatedAt: iso,
+    version: 1,
+  };
+}
+
+export function upsertDailyTaskLog(logs: DailyTaskLog[], next: DailyTaskLog): DailyTaskLog[] {
+  const previous = logs.find((entry) => entry.programId === next.programId && entry.day === next.day);
+  const merged = previous
+    ? { ...next, id: previous.id, createdAt: previous.createdAt, version: previous.version + 1 }
+    : next;
+  return [
+    ...logs.filter((entry) => !(entry.programId === next.programId && entry.day === next.day)),
+    merged,
+  ].sort((a, b) => a.day - b.day || a.updatedAt.localeCompare(b.updatedAt));
 }

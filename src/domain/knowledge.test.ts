@@ -81,7 +81,7 @@ describe('fallbackKnowledgeResponse', () => {
     expect(response.scenario).toBe('hard_to_fall_asleep');
     expect(response.cards[0].title).toBe('暂时无法生成可靠知识卡片');
     expect(response.cards[0].safetyNote).toContain('专业评估');
-    expect(response.disclaimer).toContain('专业支持');
+    expect(response.disclaimer).toContain('健康管理参考');
   });
 
   it('includes general wellness card as fallback', () => {

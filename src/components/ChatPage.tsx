@@ -3,7 +3,8 @@ import { sendChatMessage } from '../api/chatClient';
 import type { AssessmentResult, ChatMessage, FeedbackEvent, SleepProfile, SleepScenario } from '../domain/types';
 import { createSleepProgram, resolveProgramState, resolveTodayProgramTask } from '../domain/program';
 import { getScenarioDefinition } from '../domain/scenarios';
-import { type ChatHistoryScope, getDailyTaskLogs, getFeedbackEvents, getScopedChatHistory, getSleepProgram, saveFeedbackEvents, saveScopedChatHistory } from '../storage/localStore';
+import { buildUserSleepContext } from '../domain/sleepContext';
+import { type ChatHistoryScope, getDailyTaskLogs, getDiaryEntries, getFeedbackEvents, getScopedChatHistory, getSleepProgram, saveFeedbackEvents, saveScopedChatHistory } from '../storage/localStore';
 import { FeedbackControl } from './FeedbackControl';
 import { MessageList } from './MessageList';
 
@@ -53,19 +54,31 @@ export function ChatPage({ profile, chatScope = 'general', assessmentResult, ini
     setError('');
 
     try {
+      const diaryEntries = getDiaryEntries();
       const programLogs = getDailyTaskLogs();
       const storedProgram = getSleepProgram();
-      const program = storedProgram ?? createSleepProgram({
+      const sleepContext = buildUserSleepContext({
         profile,
         assessmentResult: assessmentResult ?? null,
-        diarySummary: undefined,
+        diaryEntries,
+        program: storedProgram,
+        taskLogs: programLogs,
+        message: userMessage.content,
+      });
+      const diarySummary = sleepContext.diarySummary && sleepContext.diarySummary.entryCount > 0
+        ? sleepContext.diarySummary
+        : undefined;
+      const program = sleepContext.program ?? createSleepProgram({
+        profile: sleepContext.profile,
+        assessmentResult: sleepContext.assessmentResult,
+        diarySummary,
       });
       const programState = resolveProgramState({
         program,
-        profile,
-        assessmentResult: assessmentResult ?? null,
-        diarySummary: undefined,
-        logs: programLogs,
+        profile: sleepContext.profile,
+        assessmentResult: sleepContext.assessmentResult,
+        diarySummary,
+        logs: sleepContext.taskLogs,
         today: new Date().toISOString().slice(0, 10),
       });
       const todayTask = resolveTodayProgramTask(programState);
@@ -76,11 +89,13 @@ export function ChatPage({ profile, chatScope = 'general', assessmentResult, ini
         history: historyForApi,
         assessmentResult: assessmentResult ?? undefined,
         scenario: initialScenario ?? undefined,
+        diarySummary,
         programContext: {
           currentDay: programState.program.currentDay,
           todayTask: todayTask.task,
           stats: programState.stats,
           safetyStatus: programState.program.status,
+          safetyTriage: sleepContext.safetyTriage,
         },
         signal: controller.signal,
       });

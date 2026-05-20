@@ -9,15 +9,15 @@ describe('DiaryPage', () => {
     clearAllLocalData();
   });
 
-  it('saves complete bedtime and wake checkins for the same date', async () => {
+  it('saves complete bedtime and wake checkins from guided choices for the same date', async () => {
     const user = userEvent.setup();
     render(<DiaryPage selectedDate="2026-05-08" />);
 
-    await user.type(screen.getByLabelText('睡前情绪'), '紧张');
-    await user.clear(screen.getByLabelText('压力程度'));
-    await user.type(screen.getByLabelText('压力程度'), '4');
-    await user.type(screen.getByLabelText('影响因素'), '睡前玩手机、工作消息');
-    await user.type(screen.getByLabelText('计划完成'), '4-7-8 呼吸');
+    await user.click(screen.getByRole('button', { name: '紧张' }));
+    await user.click(screen.getByRole('button', { name: '较高' }));
+    await user.click(screen.getByRole('button', { name: '睡前玩手机' }));
+    await user.click(screen.getByRole('button', { name: '工作消息' }));
+    await user.click(screen.getByRole('button', { name: '4-7-8 呼吸' }));
     await user.type(screen.getByLabelText('睡前备注'), '今晚工作较晚');
     await user.click(screen.getByRole('button', { name: '保存睡前记录' }));
 
@@ -26,13 +26,11 @@ describe('DiaryPage', () => {
 
     await user.type(screen.getByLabelText('入睡时间'), '23:40');
     await user.type(screen.getByLabelText('起床时间'), '07:10');
-    await user.type(screen.getByLabelText('入睡耗时'), '35');
-    await user.clear(screen.getByLabelText('夜醒次数'));
-    await user.type(screen.getByLabelText('夜醒次数'), '2');
-    await user.clear(screen.getByLabelText('睡眠质量'));
-    await user.type(screen.getByLabelText('睡眠质量'), '3');
-    await user.type(screen.getByLabelText('梦境记录'), '多梦');
-    await user.type(screen.getByLabelText('白天状态'), '疲惫');
+    await user.click(screen.getByRole('button', { name: '31-60分钟' }));
+    await user.click(screen.getByRole('button', { name: '2次' }));
+    await user.click(screen.getByRole('button', { name: '一般' }));
+    await user.click(screen.getByRole('button', { name: '多梦' }));
+    await user.click(screen.getByRole('button', { name: '疲惫' }));
     await user.type(screen.getByLabelText('起床备注'), '凌晨醒过两次');
     await user.click(screen.getByRole('button', { name: '保存起床记录' }));
 
@@ -49,7 +47,7 @@ describe('DiaryPage', () => {
       wakeCheckin: {
         sleepStart: '23:40',
         wakeTime: '07:10',
-        sleepLatencyMinutes: 35,
+        sleepLatencyMinutes: 45,
         awakenings: 2,
         sleepQuality: 3,
         dreamNote: '多梦',
@@ -57,5 +55,35 @@ describe('DiaryPage', () => {
         notes: '凌晨醒过两次',
       },
     });
+  });
+
+  it('reloads form values when switching between dates', async () => {
+    const user = userEvent.setup();
+    render(<DiaryPage selectedDate="2026-05-20" />);
+
+    await user.click(screen.getByRole('button', { name: '紧张' }));
+    await user.type(screen.getByLabelText('睡前备注'), '第一天');
+    await user.click(screen.getByRole('button', { name: '保存睡前记录' }));
+
+    await user.click(screen.getByRole('button', { name: /19/ }));
+    expect(screen.getByLabelText('睡前备注')).toHaveValue('');
+
+    await user.type(screen.getByLabelText('睡前备注'), '第二天');
+    await user.click(screen.getByRole('button', { name: '保存睡前记录' }));
+
+    const entries = getDiaryEntries();
+    expect(entries.find((entry) => entry.date === '2026-05-20')?.bedtimeCheckin?.notes).toBe('第一天');
+    expect(entries.find((entry) => entry.date === '2026-05-19')?.bedtimeCheckin?.notes).toBe('第二天');
+  });
+
+  it('shows validation error and does not save invalid wake checkin', async () => {
+    const user = userEvent.setup();
+    render(<DiaryPage selectedDate="2026-05-20" />);
+
+    await user.click(screen.getByRole('button', { name: /起床记录/ }));
+    await user.click(screen.getByRole('button', { name: '保存起床记录' }));
+
+    expect(screen.getByRole('alert')).toHaveTextContent('请填写入睡时间');
+    expect(getDiaryEntries()).toHaveLength(0);
   });
 });

@@ -4,6 +4,7 @@ import { buildConsultationDiarySummary } from '../domain/sleepDiary';
 import { buildDailyTaskLog, createSleepProgram, resolveProgramState, upsertDailyTaskLog } from '../domain/program';
 import { getDailyTaskLogs, getDiaryEntries, getSleepProgram, saveDailyTaskLogs, saveSleepProgram } from '../storage/localStore';
 import { buildSafetyDisplayCopy, triageSafety } from '../domain/safety';
+import { buildUserSleepContext } from '../domain/sleepContext';
 import { SafetyCarePanel } from './SafetyCarePanel';
 import type { AssessmentResult, DailyTaskLog, PlanRecommendation, ProgramTask, SleepPlan, SleepPlanCategory, TaskStatus } from '../domain/types';
 import type { SleepProfile } from '../domain/types';
@@ -354,18 +355,25 @@ function PlanLibraryAccordion({
 }
 
 export function PlansPage({ profile, assessmentResult }: { profile: SleepProfile; assessmentResult: AssessmentResult | null }) {
-  const diarySummary = buildConsultationDiarySummary(getDiaryEntries());
-  const recommendations = recommendSleepPlans({ profile, assessmentResult, diarySummary });
-
+  const diaryEntries = getDiaryEntries();
   const existingProgram = getSleepProgram();
-  const program = existingProgram ?? createSleepProgram({ profile, assessmentResult, diarySummary });
   const [taskLogs, setTaskLogs] = useState(() => getDailyTaskLogs());
+  const sleepContext = buildUserSleepContext({
+    profile,
+    assessmentResult,
+    diaryEntries,
+    program: existingProgram,
+    taskLogs,
+  });
+  const diarySummary = sleepContext.diarySummary ?? buildConsultationDiarySummary(diaryEntries);
+  const recommendations = recommendSleepPlans({ profile, assessmentResult, diarySummary });
+  const program = sleepContext.program ?? createSleepProgram({ profile, assessmentResult, diarySummary });
   const programState = resolveProgramState({
     program,
     profile,
     assessmentResult,
     diarySummary,
-    logs: taskLogs,
+    logs: sleepContext.taskLogs,
     today: new Date().toISOString().slice(0, 10),
   });
 

@@ -12,7 +12,7 @@ export function SafetyCarePanel({ level, copy }: SafetyCarePanelProps) {
         <span className="safety-care-level">{level === 'urgent' ? '紧急' : level === 'needs_care' ? '需评估' : '参考'}</span>
         <h2>{copy.title}</h2>
       </div>
-      <p>{copy.summary}</p>
+      <p className="safety-care-summary">{copy.summary}</p>
       <div className="safety-care-actions">
         {copy.actions.map((action) => (
           <article key={action.label} className="safety-care-action">
@@ -21,7 +21,7 @@ export function SafetyCarePanel({ level, copy }: SafetyCarePanelProps) {
           </article>
         ))}
       </div>
-      <p className="fine-print">{copy.disclaimer}</p>
+      <p className="fine-print safety-care-disclaimer">{copy.disclaimer}</p>
     </section>
   );
 }

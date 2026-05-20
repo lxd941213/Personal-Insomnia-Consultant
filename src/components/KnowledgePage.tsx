@@ -132,6 +132,9 @@ export function KnowledgePage({
                         <h3>{card.title}</h3>
                       </header>
                       <p className="knowledge-summary">{card.summary}</p>
+                      {card.sourceLabel && (
+                        <p className="fine-print">来源参考：{card.sourceLabel}</p>
+                      )}
 
                       {/* Key points - always visible */}
                       <div className="knowledge-section-inner">

@@ -1,9 +1,11 @@
-import type { AssessmentResult, IsiLevel, PsqiLevel, SleepProfile } from './types';
+import type { AssessmentResult, AssessmentUncertainItem, IsiLevel, PsqiLevel, SleepProfile } from './types';
 
 // ISI = Insomnia Severity Index (7 items, each 0-4, total 0-28)
 export interface AssessmentQuestion {
   id: number;
   label: string;
+  helperText?: string;
+  uncertainFallbackValue?: number;
   options: { value: number; label: string }[];
 }
 
@@ -11,6 +13,8 @@ export const isiQuestions: AssessmentQuestion[] = [
   {
     id: 0,
     label: '入睡困难',
+    helperText: '按过去一周入睡卡住的频率和困扰程度估计即可。',
+    uncertainFallbackValue: 2,
     options: [
       { value: 0, label: '无' },
       { value: 1, label: '轻度' },
@@ -22,6 +26,8 @@ export const isiQuestions: AssessmentQuestion[] = [
   {
     id: 1,
     label: '睡眠维持困难',
+    helperText: '包括夜里醒来后难再睡、睡得断断续续。',
+    uncertainFallbackValue: 2,
     options: [
       { value: 0, label: '无' },
       { value: 1, label: '轻度' },
@@ -33,6 +39,8 @@ export const isiQuestions: AssessmentQuestion[] = [
   {
     id: 2,
     label: '早醒问题',
+    helperText: '指比计划起床时间早醒，并且醒后较难继续睡。',
+    uncertainFallbackValue: 2,
     options: [
       { value: 0, label: '无' },
       { value: 1, label: '轻度' },
@@ -55,6 +63,8 @@ export const isiQuestions: AssessmentQuestion[] = [
   {
     id: 4,
     label: '失眠对日常生活的影响',
+    helperText: '轻度可理解为偶尔受影响，中度为多天受影响，重度为明显影响工作生活。',
+    uncertainFallbackValue: 2,
     options: [
       { value: 0, label: '无影响' },
       { value: 1, label: '轻度影响' },
@@ -66,6 +76,8 @@ export const isiQuestions: AssessmentQuestion[] = [
   {
     id: 5,
     label: '失眠对情绪的影响',
+    helperText: '可按烦躁、焦虑、低落或担心睡不着的程度估计。',
+    uncertainFallbackValue: 2,
     options: [
       { value: 0, label: '无影响' },
       { value: 1, label: '轻度影响' },
@@ -77,6 +89,8 @@ export const isiQuestions: AssessmentQuestion[] = [
   {
     id: 6,
     label: '对白天功能的总体影响',
+    helperText: '看注意力、精力、工作学习效率和社交状态是否受影响。',
+    uncertainFallbackValue: 2,
     options: [
       { value: 0, label: '无影响' },
       { value: 1, label: '轻度影响' },
@@ -103,6 +117,8 @@ export const psqiLiteQuestions: AssessmentQuestion[] = [
   {
     id: 1,
     label: '睡眠时长',
+    helperText: '估算真正睡着的总时长，不需要精确到分钟。',
+    uncertainFallbackValue: 2,
     options: [
       { value: 0, label: '≥7小时' },
       { value: 1, label: '6-7小时（不含）' },
@@ -114,6 +130,8 @@ export const psqiLiteQuestions: AssessmentQuestion[] = [
   {
     id: 2,
     label: '睡眠效率',
+    helperText: '大概是躺床时间里真正睡着的比例；不好算时可以选“不好判断”。',
+    uncertainFallbackValue: 2,
     options: [
       { value: 0, label: '≥85%' },
       { value: 1, label: '75-85%（不含）' },
@@ -125,6 +143,8 @@ export const psqiLiteQuestions: AssessmentQuestion[] = [
   {
     id: 3,
     label: '睡眠障碍',
+    helperText: '包括夜醒、做梦困扰、憋醒、疼痛、噪音等让睡眠中断的情况。',
+    uncertainFallbackValue: 2,
     options: [
       { value: 0, label: '无' },
       { value: 1, label: '<1次/周' },
@@ -136,6 +156,8 @@ export const psqiLiteQuestions: AssessmentQuestion[] = [
   {
     id: 4,
     label: '日间功能障碍',
+    helperText: '按白天困倦、注意力下降、效率下降或情绪波动估计。',
+    uncertainFallbackValue: 2,
     options: [
       { value: 0, label: '无' },
       { value: 1, label: '轻度' },
@@ -147,6 +169,8 @@ export const psqiLiteQuestions: AssessmentQuestion[] = [
   {
     id: 5,
     label: '主观睡眠潜伏期',
+    helperText: '指从准备睡觉到大概睡着的时间，凭印象估算即可。',
+    uncertainFallbackValue: 2,
     options: [
       { value: 0, label: '≤15分钟' },
       { value: 1, label: '16-30分钟' },
@@ -206,6 +230,10 @@ export function buildAssessmentResult(input: {
   isiAnswers: Record<number, number>;
   psqiLiteAnswers: Record<number, number>;
   profile: SleepProfile;
+  uncertainty?: {
+    items?: AssessmentUncertainItem[];
+    note?: string;
+  };
   now?: Date;
 }): AssessmentResult {
   const { isiAnswers, psqiLiteAnswers, profile } = input;
@@ -231,7 +259,19 @@ export function buildAssessmentResult(input: {
   if ((psqiLiteAnswers[5] ?? 0) >= 3) riskFlags.push('存在助眠药物或酒精依赖风险');
   profile.safetySignals.forEach((signal) => riskFlags.push(`存在安全信号：${signal}`));
 
-  return {
+  const uncertainItems = input.uncertainty?.items ?? [];
+  const note = input.uncertainty?.note?.trim() ?? '';
+  const responseQuality =
+    uncertainItems.length > 0 || note
+      ? {
+          confidence: uncertainItems.length > 0 ? 'estimated' as const : 'standard' as const,
+          uncertainCount: uncertainItems.length,
+          uncertainItems,
+          note,
+        }
+      : undefined;
+
+  const result: AssessmentResult = {
     completedAt: (input.now ?? new Date()).toISOString(),
     isi: {
       answers: isiAnsArray,
@@ -247,6 +287,10 @@ export function buildAssessmentResult(input: {
     },
     riskFlags: Array.from(new Set(riskFlags)),
   };
+  if (responseQuality) {
+    result.responseQuality = responseQuality;
+  }
+  return result;
 }
 
 export { isiLevelLabels, psqiLevelLabels, isiLevelSummaries, psqiLevelSummaries };

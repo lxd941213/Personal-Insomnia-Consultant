@@ -1,5 +1,5 @@
 import { normalizeAiResponse } from '../domain/aiResponse';
-import type { AssessmentResult, AiResponse, ChatMessage, ProgramPromptContext, SleepProfile, SleepScenario } from '../domain/types';
+import type { AssessmentResult, AiResponse, ChatMessage, ConsultationDiarySummary, ProgramPromptContext, SleepProfile, SleepScenario } from '../domain/types';
 
 interface SendChatMessageInput {
   profile: SleepProfile;
@@ -7,6 +7,7 @@ interface SendChatMessageInput {
   history: ChatMessage[];
   assessmentResult?: AssessmentResult | null;
   scenario?: SleepScenario | null;
+  diarySummary?: ConsultationDiarySummary;
   programContext?: ProgramPromptContext;
   signal?: AbortSignal;
 }
