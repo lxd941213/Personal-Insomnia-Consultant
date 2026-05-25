@@ -1,5 +1,7 @@
 # Sleep Wellness H5 MVP
 
+[简体中文](./README.zh-CN.md)
+
 Mobile-first H5 MVP for a sleep wellness AI consultant.
 
 ## Features
