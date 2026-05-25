@@ -36,10 +36,12 @@ export function TrendsPage({
   profile,
   today = new Date().toISOString().slice(0, 10),
   onOpenDiary,
+  onOpenPlans,
 }: {
   profile?: SleepProfile;
   today?: string;
   onOpenDiary?: () => void;
+  onOpenPlans?: () => void;
 }) {
   const trends = buildTrendSummary(getDiaryEntries(), today);
   const safetyTriage = profile ? triageSafety({ profile }) : null;
@@ -112,9 +114,14 @@ export function TrendsPage({
           <MetricTile
             label="改善执行"
             value={`${programStats.completionRate}%`}
-            helper={`连续完成 ${programStats.currentStreak} 天`}
+            helper={`连续完成 ${programStats.currentStreak} 天，反馈在方案页记录`}
           />
         </div>
+        {onOpenPlans && (
+          <button type="button" className="action-btn trend-secondary-action" onClick={onOpenPlans}>
+            去方案页执行今日任务
+          </button>
+        )}
       </section>
 
       <section className="trend-section" aria-labelledby="trend-insights-title">
@@ -125,16 +132,6 @@ export function TrendsPage({
         <div className="trend-insights">
           {trends.insights.map((insight) => <p key={insight}>{insight}</p>)}
           <p>{programInsight}</p>
-        </div>
-      </section>
-
-      <section className="trend-section trend-program-panel" aria-labelledby="trend-program-title">
-        <div className="trend-section-header">
-          <h2 id="trend-program-title">改善执行</h2>
-          <p>完成 {programStats.completedCount} 个任务，跳过 {programStats.skippedCount} 个任务。</p>
-        </div>
-        <div className="trend-progress-track" aria-label={`任务完成率 ${programStats.completionRate}%`}>
-          <span style={{ width: `${programStats.completionRate}%` }} />
         </div>
       </section>
 

@@ -58,6 +58,19 @@ describe('PlansPage', () => {
     expect(screen.getByText(/今晚先做/)).toBeInTheDocument();
   });
 
+  it('puts the daily execution entry before recommendation content', () => {
+    render(<PlansPage profile={profile} assessmentResult={assessmentResult} />);
+
+    const programTitle = screen.getByText('14天改善计划');
+    const recommendationTitle = screen.getByText('当前优先方案');
+
+    expect(
+      programTitle.compareDocumentPosition(recommendationTitle) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(screen.getByRole('button', { name: '完成今日任务' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '跳过今日任务' })).toBeInTheDocument();
+  });
+
   it('keeps the full 14-day timeline collapsed until requested', async () => {
     const user = userEvent.setup();
     render(<PlansPage profile={profile} assessmentResult={assessmentResult} />);
@@ -192,6 +205,20 @@ describe('PlansPage', () => {
       note: '完成了替代动作',
     });
     expect(screen.getByText(/已完成 1 个任务/)).toBeInTheDocument();
+  });
+
+  it('renders completed feedback as accessible grouped controls with dedicated field styling', async () => {
+    const user = userEvent.setup();
+    render(<PlansPage profile={profile} assessmentResult={assessmentResult} />);
+
+    await user.click(screen.getByRole('button', { name: '完成今日任务' }));
+
+    expect(screen.getByRole('group', { name: '任务难度' })).toBeInTheDocument();
+    expect(screen.getByRole('group', { name: '睡眠质量' })).toBeInTheDocument();
+    expect(screen.getByRole('group', { name: '入睡耗时' })).toBeInTheDocument();
+    expect(screen.getByRole('group', { name: '夜醒次数' })).toBeInTheDocument();
+    expect(screen.getByLabelText('白天精力').closest('label')).toHaveClass('task-feedback-field');
+    expect(screen.getByLabelText('任务备注').closest('label')).toHaveClass('task-feedback-field');
   });
 
   it('saves skipped feedback for today task', async () => {

@@ -73,10 +73,14 @@ describe('TrendsPage', () => {
   });
 
   it('renders program completion metrics and conservative insight copy', () => {
-    render(<TrendsPage today="2026-05-10" />);
+    const onOpenPlans = vi.fn();
+
+    render(<TrendsPage today="2026-05-10" onOpenPlans={onOpenPlans} />);
 
     expect(screen.getAllByText('改善执行').length).toBeGreaterThan(0);
-    expect(screen.getByLabelText('任务完成率 100%')).toBeInTheDocument();
+    expect(screen.queryByText('完成 1 个任务，跳过 0 个任务。')).not.toBeInTheDocument();
+    screen.getByRole('button', { name: '去方案页执行今日任务' }).click();
+    expect(onOpenPlans).toHaveBeenCalledTimes(1);
     expect(screen.getByText(/记录还不够/)).toBeInTheDocument();
   });
 

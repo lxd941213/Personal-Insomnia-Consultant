@@ -175,6 +175,7 @@ export default function App() {
           <TrendsPage
             profile={profile!}
             onOpenDiary={() => setActiveTab('diary')}
+            onOpenPlans={() => setActiveTab('plans')}
           />
         );
       case 'plans':

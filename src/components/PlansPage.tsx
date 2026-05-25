@@ -185,6 +185,7 @@ function CompactRecommendationList({
   );
 }
 
+
 function ProgramOverview({
   programState,
   profile,
@@ -456,22 +457,13 @@ export function PlansPage({ profile, assessmentResult }: { profile: SleepProfile
         </div>
       </header>
 
-      <section>
-        <div className="section-header">
-          <h2>当前优先方案</h2>
-          <span className="section-count">{recommendations.length} 个推荐</span>
-        </div>
-        <PriorityPlanCard
-          item={priorityRecommendation}
-          expanded={isPriorityExpanded}
-          onToggle={() => setIsPriorityExpanded((value) => !value)}
-        />
-      </section>
-
-      <CompactRecommendationList
-        items={otherRecommendations}
-        expandedPlans={expandedPlans}
-        onToggle={togglePlan}
+      <ProgramOverview
+        programState={programState}
+        profile={profile}
+        assessmentResult={assessmentResult}
+        expanded={isTimelineExpanded}
+        onToggle={() => setIsTimelineExpanded((value) => !value)}
+        onStartFeedback={setFeedbackStatus}
       />
 
       {feedbackStatus && (
@@ -495,13 +487,22 @@ export function PlansPage({ profile, assessmentResult }: { profile: SleepProfile
         />
       )}
 
-      <ProgramOverview
-        programState={programState}
-        profile={profile}
-        assessmentResult={assessmentResult}
-        expanded={isTimelineExpanded}
-        onToggle={() => setIsTimelineExpanded((value) => !value)}
-        onStartFeedback={setFeedbackStatus}
+      <section>
+        <div className="section-header">
+          <h2>当前优先方案</h2>
+          <span className="section-count">{recommendations.length} 个推荐</span>
+        </div>
+        <PriorityPlanCard
+          item={priorityRecommendation}
+          expanded={isPriorityExpanded}
+          onToggle={() => setIsPriorityExpanded((value) => !value)}
+        />
+      </section>
+
+      <CompactRecommendationList
+        items={otherRecommendations}
+        expandedPlans={expandedPlans}
+        onToggle={togglePlan}
       />
 
       <PlanLibraryAccordion
@@ -548,41 +549,57 @@ function TaskFeedbackForm({
   onCancel: () => void;
   onSave: () => void;
 }) {
+  const choiceButtonClass = (selected: boolean) => selected ? 'selected' : '';
+
   return (
     <section className="task-feedback-panel" aria-label="今日任务反馈">
       <h2>{status === 'completed' ? '完成反馈' : '跳过反馈'}</h2>
-      <div className="feedback-choice-row">
-        <button type="button" className={difficulty === 'easy' ? 'selected' : ''} onClick={() => onDifficulty('easy')}>较容易</button>
-        <button type="button" className={difficulty === 'ok' ? 'selected' : ''} onClick={() => onDifficulty('ok')}>一般</button>
-        <button type="button" className={difficulty === 'hard' ? 'selected' : ''} onClick={() => onDifficulty('hard')}>较难</button>
-      </div>
+      <fieldset className="feedback-choice-group">
+        <legend>任务难度</legend>
+        <div className="feedback-choice-row">
+          <button type="button" className={choiceButtonClass(difficulty === 'easy')} onClick={() => onDifficulty('easy')}>较容易</button>
+          <button type="button" className={choiceButtonClass(difficulty === 'ok')} onClick={() => onDifficulty('ok')}>一般</button>
+          <button type="button" className={choiceButtonClass(difficulty === 'hard')} onClick={() => onDifficulty('hard')}>较难</button>
+        </div>
+      </fieldset>
       {status === 'completed' && (
         <>
-          <div className="feedback-choice-row">
-            <button type="button" className={sleepQuality === 4 ? 'selected' : ''} onClick={() => onSleepQuality(4)}>较好</button>
-            <button type="button" className={sleepQuality === 3 ? 'selected' : ''} onClick={() => onSleepQuality(3)}>一般</button>
-            <button type="button" className={sleepQuality === 2 ? 'selected' : ''} onClick={() => onSleepQuality(2)}>较差</button>
-          </div>
-          <div className="feedback-choice-row">
-            <button type="button" className={latency === 25 ? 'selected' : ''} onClick={() => onLatency(25)}>16-30分钟</button>
-            <button type="button" className={latency === 45 ? 'selected' : ''} onClick={() => onLatency(45)}>31-60分钟</button>
-            <button type="button" className={latency === 75 ? 'selected' : ''} onClick={() => onLatency(75)}>60分钟以上</button>
-          </div>
-          <div className="feedback-choice-row">
-            <button type="button" className={awakenings === 0 ? 'selected' : ''} onClick={() => onAwakenings(0)}>0次</button>
-            <button type="button" className={awakenings === 1 ? 'selected' : ''} onClick={() => onAwakenings(1)}>1次</button>
-            <button type="button" className={awakenings === 2 ? 'selected' : ''} onClick={() => onAwakenings(2)}>2次</button>
-          </div>
+          <fieldset className="feedback-choice-group">
+            <legend>睡眠质量</legend>
+            <div className="feedback-choice-row">
+              <button type="button" className={choiceButtonClass(sleepQuality === 4)} onClick={() => onSleepQuality(4)}>较好</button>
+              <button type="button" className={choiceButtonClass(sleepQuality === 3)} onClick={() => onSleepQuality(3)}>一般</button>
+              <button type="button" className={choiceButtonClass(sleepQuality === 2)} onClick={() => onSleepQuality(2)}>较差</button>
+            </div>
+          </fieldset>
+          <fieldset className="feedback-choice-group">
+            <legend>入睡耗时</legend>
+            <div className="feedback-choice-row">
+              <button type="button" className={choiceButtonClass(latency === 25)} onClick={() => onLatency(25)}>16-30分钟</button>
+              <button type="button" className={choiceButtonClass(latency === 45)} onClick={() => onLatency(45)}>31-60分钟</button>
+              <button type="button" className={choiceButtonClass(latency === 75)} onClick={() => onLatency(75)}>60分钟以上</button>
+            </div>
+          </fieldset>
+          <fieldset className="feedback-choice-group">
+            <legend>夜醒次数</legend>
+            <div className="feedback-choice-row">
+              <button type="button" className={choiceButtonClass(awakenings === 0)} onClick={() => onAwakenings(0)}>0次</button>
+              <button type="button" className={choiceButtonClass(awakenings === 1)} onClick={() => onAwakenings(1)}>1次</button>
+              <button type="button" className={choiceButtonClass(awakenings === 2)} onClick={() => onAwakenings(2)}>2次</button>
+            </div>
+          </fieldset>
         </>
       )}
-      <label className="diary-text-field">
-        白天精力
-        <input value={energy} onChange={(event) => onEnergy(event.target.value)} />
-      </label>
-      <label className="diary-text-field">
-        任务备注
-        <textarea value={note} onChange={(event) => onNote(event.target.value)} />
-      </label>
+      <div className="task-feedback-fields">
+        <label className="task-feedback-field">
+          白天精力
+          <input value={energy} onChange={(event) => onEnergy(event.target.value)} />
+        </label>
+        <label className="task-feedback-field">
+          任务备注
+          <textarea value={note} onChange={(event) => onNote(event.target.value)} />
+        </label>
+      </div>
       {error && <p className="error" role="alert">{error}</p>}
       <div className="task-feedback-actions">
         <button type="button" className="primary-button" onClick={onSave}>保存任务反馈</button>
